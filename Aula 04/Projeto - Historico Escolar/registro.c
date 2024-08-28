@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "arquivo.h"
 #include "registro.h"
 
 #define MAX_NOME 50
@@ -27,21 +28,18 @@ typedef struct {
 } Estado;*/
 
 void carregar_insere(){
-    FILE *arquivo_Insere = fopen("insere.bin", "rb");
+    FILE *arquivo_insere = abrir_criar_arquivo("insere.bin", "rb");
+    if(arquivo_insere == NULL){
+        printf("Erro ao abrir arquivo");
+    }
     Registro reg;
-    char lixo;
-    fread(&reg.id_Aluno, sizeof(reg.id_Aluno), 1, arquivo_Insere);
-    //fseek(arquivo_Insere, 1, SEEK_CUR);
-    fread(&reg.sigla_Disciplina, sizeof(reg.sigla_Disciplina), 1, arquivo_Insere);
-    //fread(lixo, sizeof(char), 1, arquivo_Insere);
-    //fseek(arquivo_Insere, 1, SEEK_SET);
-    fread(&reg.nome_Aluno, sizeof(reg.nome_Aluno), 1, arquivo_Insere);
-    //fseek(arquivo_Insere, 1, SEEK_SET);
-    fread(&reg.nome_Disciplina, sizeof(reg.nome_Disciplina), 1, arquivo_Insere);
-    //fseek(arquivo_Insere, 1, SEEK_SET);
-    fread(&reg.media, sizeof(reg.media), 1, arquivo_Insere);
-    //fseek(arquivo_Insere, 1, SEEK_SET);
-    fread(&reg.frequencia, sizeof(reg.frequencia), 1, arquivo_Insere);
+
+    fread(&reg.id_Aluno, sizeof(reg.id_Aluno), 1, arquivo_insere);
+    fread(&reg.sigla_Disciplina, sizeof(reg.sigla_Disciplina), 1, arquivo_insere);
+    fread(&reg.nome_Aluno, sizeof(reg.nome_Aluno), 1, arquivo_insere);
+    fread(&reg.nome_Disciplina, sizeof(reg.nome_Disciplina), 1, arquivo_insere);
+    fread(&reg.media, sizeof(reg.media), 1, arquivo_insere);
+    fread(&reg.frequencia, sizeof(reg.frequencia), 1, arquivo_insere);
 
     printf("id_aluno: (%s)\n",reg.id_Aluno);
     printf("sigla: (%s)\n",reg.sigla_Disciplina);
@@ -54,18 +52,16 @@ void carregar_insere(){
 
 }
 
-FILE *carregar_Historico(const char* nome_Arquivo){
+/*FILE *carregar_Historico(const char* nome_Arquivo){
     FILE *arquivo = fopen(nome_Arquivo, "rb+");
     if(arquivo == NULL){
         arquivo = fopen(nome_Arquivo, "wb+");
-        int offset_cabecalho = -1; // offset_cabecalho indica a posição do proximo espaço de registro disponivel, -1 indica final da lista encadeada (não ha proximo espaço)
+        int offset_cabecalho = -1; // offset_cabecalho indica a posicao do proximo espaco de registro disponivel, -1 indica final da lista encadeada (nao ha proximo espaco)
         fwrite(&offset_cabecalho, sizeof(int), 1, arquivo);
     }
-}
 
-void fechar_Arquivo(FILE *arquivo){
-    fclose(arquivo);
-}
+    return arquivo;
+}*/
 
 
 /*
@@ -77,7 +73,7 @@ void salvarEstado(Estado estado) {
 }
 
 Estado carregarEstado() {
-    Estado estado = {0, 0};  // Inicializa com 0 caso o arquivo não exista
+    Estado estado = {0, 0};  // Inicializa com 0 caso o arquivo nao exista
 
     FILE *estadoFile = fopen("estado.bin", "rb");
     if (estadoFile != NULL) {
@@ -103,7 +99,7 @@ void inserirRegistro(FILE *arquivo, Registro reg, Estado *estado) {
         fwrite(&tamanhoTotal, sizeof(int), 1, arquivo);
         fwrite(&reg, sizeof(Registro), 1, arquivo);
     } else {
-        // Implementação de first-fit (simplificada)
+        // Implementacao de first-fit (simplificada)
         fseek(arquivo, offset_cabecalho, SEEK_SET);
         EspacoDisponivel espaco;
         fread(&espaco, sizeof(EspacoDisponivel), 1, arquivo);
@@ -119,7 +115,7 @@ void inserirRegistro(FILE *arquivo, Registro reg, Estado *estado) {
         }
     }
 
-    // Atualiza a posição de inserção no estado
+    // Atualiza a posicao de insercao no estado
     estado->posInsercao++;
     salvarEstado(*estado);
 }
@@ -132,14 +128,14 @@ void removerRegistro(FILE *arquivo, char *idAluno, char *siglaDisciplina, Estado
     while (fread(&tamanhoTotal, sizeof(int), 1, arquivo) > 0) {
         fread(&reg, sizeof(Registro), 1, arquivo);
         if (strncmp(reg.idAluno, idAluno, FIXO_ID) == 0 && strncmp(reg.siglaDisciplina, siglaDisciplina, FIXO_SIGLA) == 0) {
-            // Remover e marcar espaço disponível
+            // Remover e marcar espaco disponivel
             fseek(arquivo, -sizeof(Registro) - sizeof(int), SEEK_CUR);
             int offsetAtual = ftell(arquivo);
             fwrite(&tamanhoTotal, sizeof(int), 1, arquivo);
-            int proxOffset = -1; // Último da lista
+            int proxOffset = -1; // ultimo da lista
             fwrite(&proxOffset, sizeof(int), 1, arquivo);
 
-            // Atualizar cabeçalho
+            // Atualizar cabecalho
             fseek(arquivo, 0, SEEK_SET);
             fwrite(&offsetAtual, sizeof(int), 1, arquivo);
             break;
@@ -147,7 +143,7 @@ void removerRegistro(FILE *arquivo, char *idAluno, char *siglaDisciplina, Estado
         fseek(arquivo, tamanhoTotal - sizeof(Registro) - sizeof(int), SEEK_CUR);
     }
 
-    // Atualiza a posição de remoção no estado
+    // Atualiza a posicao de remocao no estado
     estado->posRemocao++;
     salvarEstado(*estado);
 }

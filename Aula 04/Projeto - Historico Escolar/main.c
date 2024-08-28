@@ -4,7 +4,7 @@
 int main() {
     int opcao = -1;
     const char *arquivo_Historico = "historico.bin";
-    FILE *arquivo = carregar_Historico(arquivo_Historico);
+    //FILE *arquivo = carregar_Historico(arquivo_Historico);
     carregar_insere();
 
 
@@ -13,14 +13,14 @@ int main() {
 /*
     Estado estado = carregarEstado();
 
-    // Exemplo de inserção
+    // Exemplo de inserï¿½ï¿½o
     Registro reg1 = {"001", "ED2", "Paulo da Silva", "Estrutura de Dados 2", 7.3, 75.4};
     inserirRegistro(arquivo, reg1, &estado);
 
-    // Exemplo de remoção
+    // Exemplo de remoï¿½ï¿½o
     removerRegistro(arquivo, "001", "ED2", &estado);
 
-    // Exemplo de compactação
+    // Exemplo de compactaï¿½ï¿½o
     compactarArquivo(nome_Arquivo);
 
     fecharArquivo(arquivo);*/

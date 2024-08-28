@@ -50,5 +50,6 @@ Em relação a (b), o arquivo conterá uma lista de chaves “ID do aluno+Sigla 
 
 ## Minhas OBS
 
+- Colocar os arquivos `insere.bin` e `remove.bin` na pasta dos arquivos fontes se for usar o CodeBlocks
 - Ter um arquivo auxiliar para gravar posição do `insere.bin` e `remove.bin` (registros anteriores a essa posição, já foram usados).
 - nos arquivos `insere.bin` e `remove.bin`, o byte após o valor escrito é um terminador de string `\0`
