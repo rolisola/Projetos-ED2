@@ -27,7 +27,7 @@ Ao adicionar o registro de um aluno vocês terão que percorrer a lista de espa�
 Dada a chave “ID do aluno+Sigla da disciplina” (<u>recuperada de um arquivo a ser fornecido no momento da execução do programa <b>(vide Opção 4)</b></u>) realize a remoção do respectivo registro. A remoção deve ser feita diretamente no arquivo de dados. Para reaproveitar o espaço removido vocês terão que acrescentar no arquivo uma lista ligada entre os espaços disponíveis. Assim, vocês terão que acrescentar as seguintes informações no arquivo:
 
 1. Criem um registro cabeçalho e nele um campo que indica o offset para o primeiro elemento da lista.
-2. Ao remover um registro, substitua-o no arquivo por: <b><u>(tamanho em bytes do registro removido)*(offset para o próximo elemento da lista)</u></b>, onde * é um marcador indicando que este espaço está disponível.
+2. Ao remover um registro, substitua-o no arquivo por: <b><u>(tamanho em bytes do registro removido)*(offset para o próximo elemento da lista)</u></b>, onde `*` é um marcador indicando que este espaço está disponível.
 3. Um novo espaço disponível deve ser acrescentado sempre no início da lista. Logo, vocês devem atualizar o offset do cabeçalho e guardar o seu antigo offset no novo elemento da lista.
 4. O final da lista é indicado por -1 no campo offset para o próximo elemento.
 
@@ -45,3 +45,10 @@ Em relação a (b), o arquivo conterá uma lista de chaves “ID do aluno+Sigla 
 
 1. Não criar o arquivo toda vez que o programa for aberto (fazer verificação).
 2. O arquivo deve ser manipulado totalmente em memória secundária!
+
+
+
+## Minhas OBS
+
+- Ter um arquivo auxiliar para gravar posição do `insere.bin` e `remove.bin` (registros anteriores a essa posição, já foram usados).
+- nos arquivos `insere.bin` e `remove.bin`, o byte após o valor escrito é um terminador de string `\0`
