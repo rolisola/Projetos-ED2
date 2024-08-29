@@ -35,7 +35,7 @@ void carregar_insere(){
     if(arquivo_insere == NULL){
         printf("Erro ao abrir arquivo.\n");
     }
-    Registro reg;
+    REGISTRO reg;
 
     size_t tam_arquivo = obter_tamanho_arquivo(arquivo_insere);
     unsigned int qtd = tam_arquivo / sizeof(reg);
