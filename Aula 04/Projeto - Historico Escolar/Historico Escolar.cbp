@@ -35,10 +35,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="registro.h" />
-		<Unit filename="Operacoes.c">
+		<Unit filename="arquivo.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Operacoes.h" />
+		<Unit filename="arquivo.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
