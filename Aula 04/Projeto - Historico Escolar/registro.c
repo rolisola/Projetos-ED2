@@ -4,11 +4,13 @@
 #include "arquivo.h"
 #include "registro.h"
 
+/*
 #define MAX_NOME 50
 #define FIXO_ID 3
 #define FIXO_SIGLA 3
-
-/*typedef struct {
+*/
+/*
+typedef struct {
     char idAluno[FIXO_ID + 1];
     char siglaDisciplina[FIXO_SIGLA + 1];
     char nomeAluno[MAX_NOME + 1];
@@ -25,36 +27,68 @@ typedef struct {
 typedef struct {
     int posInsercao;
     int posRemocao;
-} Estado;*/
+} Estado;
+*/
 
 void carregar_insere(){
     FILE *arquivo_insere = abrir_criar_arquivo("insere.bin", "rb");
     if(arquivo_insere == NULL){
-        printf("Erro ao abrir arquivo");
+        printf("Erro ao abrir arquivo.\n");
     }
     Registro reg;
 
+    size_t tam_arquivo = obter_tamanho_arquivo(arquivo_insere);
+    unsigned int qtd = tam_arquivo / sizeof(reg);
+    printf("%u\n", qtd);
+    //fread(&reg, sizeof(reg), 1, arquivo_insere);
+    /*
     fread(&reg.id_Aluno, sizeof(reg.id_Aluno), 1, arquivo_insere);
     fread(&reg.sigla_Disciplina, sizeof(reg.sigla_Disciplina), 1, arquivo_insere);
     fread(&reg.nome_Aluno, sizeof(reg.nome_Aluno), 1, arquivo_insere);
     fread(&reg.nome_Disciplina, sizeof(reg.nome_Disciplina), 1, arquivo_insere);
     fread(&reg.media, sizeof(reg.media), 1, arquivo_insere);
     fread(&reg.frequencia, sizeof(reg.frequencia), 1, arquivo_insere);
-
+    */
+    /*
     printf("id_aluno: (%s)\n",reg.id_Aluno);
     printf("sigla: (%s)\n",reg.sigla_Disciplina);
     printf("nome Aluno: (%s)\n",reg.nome_Aluno);
     printf("Nome disciplina: (%s)\n",reg.nome_Disciplina);
     printf("media: (%.2f)\n",reg.media);
     printf("freq: (%.2f)\n",reg.frequencia);
-
+    */
 
 
 }
 
-/*FILE *carregar_Historico(const char* nome_Arquivo){
-    FILE *arquivo = fopen(nome_Arquivo, "rb+");
+size_t contar_registros(const char *nome_arquivo){
+    FILE *arquivo = abrir_arquivo(nome_arquivo, "rb");
+
+    size_t tamanho_registro = sizeof(REGISTRO);
+    size_t tamanho_arquivo = obter_tamanho_arquivo(arquivo);
+
     if(arquivo == NULL){
+        perror("Erri ao abrir arquivo.");
+    }
+    if(tamanho_registro == 0){
+        fclose(arquivo);
+        return 0; // Evita divisão por zero
+    }
+
+    size_t num_registros = tamanho_arquivo / tamanho_registro;
+
+    fclose(arquivo);
+    return num_registros;
+}
+
+// Carrega o arquivo de histórico
+/*FILE *carregar_Historico(const char* nome_Arquivo){
+
+    FILE *arquivo = abrir_criar_arquivo(nome_Arquivo, "wb+");
+    if(fread()){
+
+    }
+    /*if(arquivo == NULL){
         arquivo = fopen(nome_Arquivo, "wb+");
         int offset_cabecalho = -1; // offset_cabecalho indica a posicao do proximo espaco de registro disponivel, -1 indica final da lista encadeada (nao ha proximo espaco)
         fwrite(&offset_cabecalho, sizeof(int), 1, arquivo);

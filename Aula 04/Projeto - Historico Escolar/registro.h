@@ -8,11 +8,11 @@
 typedef struct{
     char id_Aluno[FIXO_ID+1];
     char sigla_Disciplina[FIXO_SIGLA+1];
-    char nome_Aluno[MAX_NOME+1];
-    char nome_Disciplina[MAX_NOME+1];
+    char nome_Aluno[MAX_NOME];
+    char nome_Disciplina[MAX_NOME];
     float media;
     float frequencia;
-}Registro;
+}REGISTRO;
 
 typedef struct{
     int tamanho;
