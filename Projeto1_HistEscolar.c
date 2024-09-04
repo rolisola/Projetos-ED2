@@ -81,7 +81,7 @@ void inserir(FILE **fp_insere, FILE *fp_arq) {
     fread(&registro, sizeof(registro), 1, *fp_insere);
     
     char buffer[512];
-    sprintf(buffer, "%s%s#%s#%s#%0.1f#%0.1f", registro.idAluno, registro.siglaDisc, registro.nomeAluno, registro.nomeDisc, registro.media, registro.freq);
+    sprintf(buffer, "%s%s|%s|%s|%0.1f|%0.1f|", registro.idAluno, registro.siglaDisc, registro.nomeAluno, registro.nomeDisc, registro.media, registro.freq);
 
     int tam_reg = strlen(buffer);
     int tam_espaco;
@@ -166,7 +166,7 @@ void inserir(FILE **fp_insere, FILE *fp_arq) {
 
 void remover(FILE **fp_remove, FILE *fp_arq) {
     if ((*fp_remove = fopen("remove.bin","r+b")) == NULL) {
-        printf("Não foi possivel abrir o arquivo");
+        printf("Não foi possivel abrir o arquivo (void remover)");
         return;
 	}
 
@@ -241,7 +241,7 @@ void compactar(FILE *fp_arq) {
     FILE *fp_aux;
 
     if((fp_aux = fopen("arq_auxiliar.bin", "w+b")) == NULL) {
-        printf("Não foi possivel abrir o arquivo");
+        printf("Não foi possivel abrir o arquivo (void compactar)");
         return;
     }
 
@@ -289,9 +289,9 @@ void compactar(FILE *fp_arq) {
     printf("\nArquivo compactado com sucesso!\n");
 
     if((fp_arq = fopen("arq_registros.bin","r+b")) == NULL) {
-	    	printf("Não foi possivel abrir o arquivo");
-		    return;
-	    }
+	    printf("Não foi possivel abrir o arquivo");
+		return;
+	}
 }
 
 int main () {
