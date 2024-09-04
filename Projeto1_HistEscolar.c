@@ -81,7 +81,7 @@ void inserir(FILE **fp_insere, FILE *fp_arq) {
     fread(&registro, sizeof(registro), 1, *fp_insere);
     
     char buffer[512];
-    sprintf(buffer, "%s%s|%s|%s|%0.1f|%0.1f|", registro.idAluno, registro.siglaDisc, registro.nomeAluno, registro.nomeDisc, registro.media, registro.freq);
+    sprintf(buffer, "%s%s#%s#%s#%0.1f#%0.1f", registro.idAluno, registro.siglaDisc, registro.nomeAluno, registro.nomeDisc, registro.media, registro.freq);
 
     int tam_reg = strlen(buffer);
     int tam_espaco;
