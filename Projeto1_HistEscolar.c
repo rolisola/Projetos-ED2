@@ -7,8 +7,8 @@
 #include<locale.h>
 
 struct Reg {
-    char idAluno[3];
-    char siglaDisc[3];
+	char idAluno [4];
+    char siglaDisc[4];
     char nomeAluno[50];
     char nomeDisc[50];
     float media;
@@ -16,8 +16,8 @@ struct Reg {
 };
 
 struct Chave {
-    char idAluno[3];
-    char siglaDisc[3];
+	char idAluno [4];
+    char siglaDisc[4];
 };
 
 struct Cabecalho {
@@ -81,7 +81,7 @@ void inserir(FILE **fp_insere, FILE *fp_arq) {
     fread(&registro, sizeof(registro), 1, *fp_insere);
     
     char buffer[512];
-    sprintf(buffer, "%s|%s|%s|%s|%0.1f|%0.1f|", registro.idAluno, registro.siglaDisc, registro.nomeAluno, registro.nomeDisc, registro.media, registro.freq);
+    sprintf(buffer, "%s%s|%s|%s|%0.1f|%0.1f|", registro.idAluno, registro.siglaDisc, registro.nomeAluno, registro.nomeDisc, registro.media, registro.freq);
 
     int tam_reg = strlen(buffer);
     int tam_espaco;
@@ -126,7 +126,7 @@ void inserir(FILE **fp_insere, FILE *fp_arq) {
                 }
 
                 else {
-                    if(BOF_ant_dispo == 8) {
+                    if(BOF_ant_dispo == 0) {
                         header.BOF_dispo = BOF_atual_dispo;
                         rewind(fp_arq);
                         fwrite(&header, sizeof(header), 1, fp_arq);
@@ -159,14 +159,145 @@ void inserir(FILE **fp_insere, FILE *fp_arq) {
     rewind(fp_arq);
     fwrite(&header, sizeof(header), 1, fp_arq);
 
-    printf("\nRegistro incluído com sucesso!\n");
+    printf("\nRegistro incluido com sucesso!\n");
 
     fclose(*fp_insere);
 }
 
+void remover(FILE **fp_remove, FILE *fp_arq) {
+    if ((*fp_remove = fopen("remove.bin","r+b")) == NULL) {
+        printf("NÃ£o foi possivel abrir o arquivo");
+        return;
+	}
+
+    struct Chave key;
+    struct Cabecalho header;
+
+    int tam_reg = 0;
+    int acum_BOF = sizeof(header);
+    int reg_checados = 0;
+    char buffer_key[256];
+    char buffer_registro[512];
+
+    rewind(fp_arq);
+    fread(&header, sizeof(header), 1, fp_arq);
+
+    fseek(*fp_remove, header.regLidos_remove*sizeof(key), SEEK_SET);
+    fread(&key, sizeof(key), 1, *fp_remove);
+    sprintf(buffer_key, "%s%s", key.idAluno, key.siglaDisc);
+
+    while(true) {
+        fread(&tam_reg, sizeof(int), 1, fp_arq);
+        fread(&buffer_registro, tam_reg, 1, fp_arq);
+
+        if(buffer_registro[0] != buffer_key[0] || buffer_registro[3] != buffer_key[3]) {
+            acum_BOF += tam_reg;
+            reg_checados++;
+
+            fgetc(fp_arq);
+            if(feof(fp_arq)) {
+                header.regLidos_remove++;
+                rewind(fp_arq);
+                fwrite(&header, sizeof(header), 1, fp_arq);
+
+                printf("\nNao ha nenhum registro correspondente a essa chave no arquivo\n");
+
+                fclose(*fp_remove);
+
+                return;
+            }
+
+            else fseek(fp_arq, -1, SEEK_CUR);
+        }
+
+        else break;
+    }
+
+    fseek(fp_arq, (-1)*tam_reg, SEEK_CUR);
+    char estrela = '*';
+    fwrite(&estrela, 1, 1, fp_arq);
+    fwrite(&header.BOF_dispo, sizeof(int), 1, fp_arq);
+
+    acum_BOF += reg_checados*sizeof(int);
+    
+    header.BOF_dispo = acum_BOF;
+    header.regLidos_remove++;
+
+    rewind(fp_arq);
+    fwrite(&header, sizeof(header), 1, fp_arq);
+
+    printf("\nRegistro excluido com sucesso!\n");
+
+    fclose(*fp_remove);
+}
+
+void compactar(FILE *fp_arq) {
+    int tam_espaco, tam_registro;
+    char buffer[1024];
+    char ch_aux;
+
+    struct Cabecalho header;
+
+    FILE *fp_aux;
+
+    if((fp_aux = fopen("arq_auxiliar.bin", "w+b")) == NULL) {
+        printf("NÃ£o foi possivel abrir o arquivo");
+        return;
+    }
+
+    rewind(fp_arq);
+    fread(&header, sizeof(header), 1, fp_arq);
+    header.BOF_dispo = -1;
+    fwrite(&header, sizeof(header), 1, fp_aux);
+
+    while(true) {
+        fread(&tam_espaco, sizeof(int), 1, fp_arq);
+        ch_aux = fgetc(fp_arq);
+
+        if(ch_aux == '*') {
+            fseek(fp_arq, (tam_espaco - 1), SEEK_CUR);
+            continue;
+        }
+
+        if(ch_aux == EOF) {
+            break;
+        }
+
+        fseek(fp_arq, -1, SEEK_CUR);
+        tam_registro = pega_registro(fp_arq, buffer);
+
+        fwrite(&tam_registro, sizeof(int), 1, fp_aux);
+        fwrite(buffer, strlen(buffer), 1, fp_aux);
+
+        fseek(fp_arq, tam_espaco - tam_registro, SEEK_CUR);
+        ch_aux = fgetc(fp_arq);
+
+        if(ch_aux != EOF) fseek(fp_arq, -1, SEEK_CUR);
+        else break;
+    }
+
+    fclose(fp_arq);
+    fclose(fp_aux);
+
+    char arquivo_original[100] = "arq_registros.bin";
+    char arquivo_auxiliar[100] = "arq_auxiliar.bin";
+
+    if(remove(arquivo_original) == -1 ) printf("Erro ao excluir arquivo\n");
+    if(rename(arquivo_auxiliar, arquivo_original) != 0) printf("Erro ao renomear arquivo\n");
+    remove(arquivo_auxiliar);
+
+    printf("\nArquivo compactado com sucesso!\n");
+
+    if((fp_arq = fopen("arq_registros.bin","r+b")) == NULL) {
+	    	printf("NÃ£o foi possivel abrir o arquivo");
+		    return;
+	    }
+}
+
 int main () {
     setlocale(LC_ALL,"");
-    FILE *fp_arq, *fp_insere, *fp_remove;
+    FILE *fp_arq, *fp_insere;
+    FILE *fp_remove;
 
     struct Cabecalho header;
 
@@ -176,7 +307,7 @@ int main () {
     
     if(!existeArq()) {
         if ((fp_arq = fopen("arq_registros.bin","w+b")) == NULL) {
-	    	printf("Não foi possível abrir o arquivo");
+	    	printf("NÃ£o foi possivel abrir o arquivo");
 		    return 0;
 	    }
 
@@ -186,7 +317,7 @@ int main () {
 
     else {
         if((fp_arq = fopen("arq_registros.bin","r+b")) == NULL) {
-	    	printf("Não foi possível abrir o arquivo");
+	    	printf("NÃ£o foi possivel abrir o arquivo");
 		    return 0;
 	    }
     }
@@ -199,9 +330,9 @@ int main () {
         switch(op) {
             case 1: inserir(&fp_insere, fp_arq);
                     break;
-            case 2: //remover(&fp_remove, fp_arq);
+            case 2: remover(&fp_remove, fp_arq);
                     break;
-            case 3: //compactar(fp_arq);
+            case 3: compactar(fp_arq);
                     break;
             default: break;
         }
