@@ -11,13 +11,14 @@ int main() {
         char nome_disc[50];
         float media;
         float freq;
-    } vet[6] = {{"001", "AAA", "João da Silva", "AAAA", 7.5, 72.3},
+    } vet[9] = {{"001", "AAA", "João da Silva", "AAAA", 7.5, 72.3},
                 {"001", "BBB", "João da Silva", "BBB", 8.2, 80.4},
-                {"001", "CCC", "João da Silva", "CCCCC", 5.4, 79.7},
-                
-                {"001", "CCC", "Paulo Souza", "CCCCC", 6.8, 91.3},
                 {"001", "HHH", "Paulo Souza", "HHH", 7.3, 82.7},
-                
+                {"001", "CCC", "João da Silva", "CCCCC", 5.4, 79.7},
+                {"001", "CCC", "Paulo Souza", "CCCCC", 6.8, 91.3},
+                {"001", "DDD", "João da Silva", "DDDDD", 5.4, 79.7},
+                {"001", "EEE", "João da Silva", "EEEEE", 5.4, 23.7},
+                {"001", "FFF", "João da Silva", "FFFFF", 2.4, 79.7},
                 {"002", "HHH", "Pedro Silva Silva", "HHH", 9.5, 92.7}};
        
     fd = fopen("insere.bin", "w+b");
