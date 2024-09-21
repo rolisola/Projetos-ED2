@@ -1,4 +1,4 @@
-# <div align="center">PROJETO AULA 04<br>Sistema de Histórico Escolar</div>
+# <div align="center">PROJETO AULA 04<br>Organização de Arquivos</div>
 
 <div align="justify">O objetivo do exercício é gerenciar um sistema de histórico escolar “limpo” de uma dada instituição. O sistema armazena as seguintes informações: ID do aluno, sigla da disciplina, nome do aluno, nome da disciplina, média e frequência. A chave primária é composta pela composição “ID do aluno+Sigla da disciplina”. O arquivo a ser criado deve ser de registros e campos de tamanho variável, com um inteiro (4 bytes) no início do registro indicando o tamanho do registro, e com campos separados pelo caractere ‘#’.
 
