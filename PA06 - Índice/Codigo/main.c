@@ -3,36 +3,40 @@
 #include "arquivo.h"
 #include "registro.h"
 
-int main(){
+int main() {
+    remove("historico.bin");
+    remove("auxiliar.bin");
+
     int opcao;
+    const char *nome_arquivo_historico = "historico.bin";
     const char *nome_arquivo_insere = "insere.bin";
     const char *nome_arquivo_busca_primaria = "busca_p.bin";
     const char *nome_arquivo_busca_secundaria = "busca_s.bin";
     const char *nome_arquivo_auxiliar = "auxiliar.bin";
 
-    FILE *arquivo_auxiliar = abrir_criar_arquivo(nome_arquivo_auxiliar,"wb+");
-    int valor=0;
-    fwrite(&valor,sizeof(int),1,arquivo_auxiliar);
-    fwrite(&valor,sizeof(int),1,arquivo_auxiliar);
-    fwrite(&valor,sizeof(int),1,arquivo_auxiliar);
+    FILE *arquivo_auxiliar = abrir_criar_arquivo(nome_arquivo_auxiliar, "wb+");
+    int valor = 0;
+    fwrite(&valor, sizeof(int), 1, arquivo_auxiliar);
+    fwrite(&valor, sizeof(int), 1, arquivo_auxiliar);
+    fwrite(&valor, sizeof(int), 1, arquivo_auxiliar);
     fclose(arquivo_auxiliar);
 
     REGISTRO *vr;
     vr = carregar_insere();
-    //a(vr);
-    do{
+    size_t tamanho_vetor_inserir = contar_registros(nome_arquivo_insere);
+    // a(vr);
+    do {
         printf("Menu:\n");
         printf("1. Inserção\n");
         printf("2. Busca Primária\n");
         printf("3. Busca Secundária\n");
-        printf("4. Carregar Arquivo\n");
         printf("0. Sair\n");
         printf("Opção: ");
         scanf("%d", &opcao);
-        switch(opcao){
+        switch (opcao) {
         case 1:
             printf("Inserindo.\n");
-            inserir_registro(vr);
+            inserir_registro(nome_arquivo_historico, vr, tamanho_vetor_inserir);
             break;
 
         case 2:
@@ -40,10 +44,6 @@ int main(){
             break;
 
         case 3:
-            printf("\n");
-            break;
-
-        case 4:
             printf("\n");
             break;
 
@@ -55,6 +55,6 @@ int main(){
             printf("Opção inválida, tente novamente!\n\n\n");
             break;
         }
-    }while(opcao != 0);
+    } while (opcao != 0);
     return 0;
 }

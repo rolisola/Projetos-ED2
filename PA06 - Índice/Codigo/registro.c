@@ -1,21 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "arquivo.h"
 #include "registro.h"
+#include "arquivo.h"
 
-REGISTRO* carregar_insere(){
+REGISTRO *carregar_insere() {
     FILE *arquivo_insere = abrir_arquivo("insere.bin", "rb");
-    if(arquivo_insere == NULL){
-        printf("Erro ao abrir arquivo. SAINDO!!!!\n");
+    if (arquivo_insere == NULL) {
+        perror("Erro ao abrir arquivo.");
         exit(EXIT_FAILURE);
     }
 
     size_t tamanho_arquivo = obter_tamanho_arquivo(arquivo_insere);
-    unsigned int qtd = tamanho_arquivo / sizeof(REGISTRO);
+    size_t quantidade_registros = tamanho_arquivo / sizeof(REGISTRO);
 
-    REGISTRO *vetor_insere = (REGISTRO*) malloc(qtd * sizeof(REGISTRO));
-    for(int i = 0; i < qtd; i++){
+    REGISTRO *vetor_insere = (REGISTRO *)malloc(quantidade_registros * sizeof(REGISTRO));
+    if (vetor_insere == NULL) {
+        perror("Erro ao alocar memória.");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < quantidade_registros; i++) {
         fread(&vetor_insere[i], sizeof(REGISTRO), 1, arquivo_insere);
     }
 
@@ -24,67 +29,74 @@ REGISTRO* carregar_insere(){
     return vetor_insere;
 }
 
-void inserir_registro(REGISTRO *vetor_insere){
+void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere, size_t tamanho_vetor_insere) {
     int posicao = obter_auxiliar(0);
-    printf("posicao: %d\n", posicao);
+    printf("Posição atual: %d\n", posicao);
 
-    // Calculando o tamanho necessário para a string
-    int tamanho_strings = strlen(vetor_insere[posicao].id_Aluno) +
-                          strlen(vetor_insere[posicao].sigla_Disciplina) +
-                          strlen(vetor_insere[posicao].nome_Aluno) +
-                          strlen(vetor_insere[posicao].nome_Disciplina);
-
-    // Contando os separadores (#) e os dois floats com precisão %.1f (aproximadamente 4 caracteres cada)
-    int tamanho_buffer = tamanho_strings + 4 + 4 + 5; // 5 separadores #
-
-    // Criando espaço extra para o caractere nulo \0
-    int tamanho_total = tamanho_buffer + 1; // Para o \0
-
-    // Alocando a memória para o string_buffer
-    char *string_buffer = (char *)malloc(tamanho_total * sizeof(char));
-    if(string_buffer == NULL){
-        printf("Erro ao alocar memória.\n");
+    if (posicao >= tamanho_vetor_insere) {
+        printf("Todos os registros foram inseridos!\n");
         return;
     }
 
-    // Preenchendo o buffer
-    snprintf(string_buffer, tamanho_total, "%s#%s#%s#%s#%.1f#%.1f",
+    char string_completa[256];
+    char string_texto[256];
+    // imprime_vetor_insere(vetor_insere);
+    snprintf(string_texto, sizeof(string_texto), "%s#%s#%s#%s",
              vetor_insere[posicao].id_Aluno,
              vetor_insere[posicao].sigla_Disciplina,
              vetor_insere[posicao].nome_Aluno,
-             vetor_insere[posicao].nome_Disciplina,
+             vetor_insere[posicao].nome_Disciplina);
+    // int tamanho_string = strlen(string_texto);
+    // printf("%d%s\n", (int)strlen(string_texto), string_texto);
+
+    snprintf(string_completa, sizeof(string_completa), "%s#%.1f#%.1f",
+             string_texto,
              vetor_insere[posicao].media,
              vetor_insere[posicao].frequencia);
 
-    // Calculando o comprimento da string gerada e quantos dígitos são necessários para armazenar esse tamanho
-    int tamanho_string = strlen(string_buffer);
-    int digitos_tamanho = snprintf(NULL, 0, "%d", tamanho_string); // Quantidade de dígitos do tamanho
-
-    // Criando espaço para a nova string com o tamanho incluído no início
-    int tamanho_string_final = digitos_tamanho + tamanho_string + 1; // +1 para o \0
-    char *new_string_buffer = (char *)malloc(tamanho_string_final * sizeof(char));
-    if(new_string_buffer == NULL){
-        printf("Erro ao alocar memória.\n");
-        free(string_buffer); // Liberando string_buffer em caso de erro
+    // printf("%d%s\n", (int)strlen(string_completa), string_completa);
+    FILE *arquivo_historico = abrir_criar_arquivo(nome_arquivo_historico, "ab+");
+    if (arquivo_historico == NULL) {
+        perror("Erro ao abrir arquivo.");
         return;
     }
 
-    snprintf(new_string_buffer, tamanho_string_final, "%d%s", tamanho_string, string_buffer);
-
-    // Exibindo as strings resultantes
-    printf("String final: (%s)\nTamanho: (%d)\n", new_string_buffer, (int)strlen(new_string_buffer));
-
+    int tamanho_string = strlen(string_completa);
+    fseek(arquivo_historico, 0, SEEK_END);
+    size_t escrito = fwrite(&tamanho_string, sizeof(int), 1, arquivo_historico);
+    if (escrito != 1) {
+        perror("Erro ao escrever no arquivo.");
+        fclose(arquivo_historico);
+        exit(EXIT_FAILURE);
+    }
+    escrito = fwrite(string_texto, strlen(string_texto) - 1, 1, arquivo_historico);
+    if (escrito != 1) {
+        perror("Erro ao escrever no arquivo.");
+        fclose(arquivo_historico);
+        exit(EXIT_FAILURE);
+    }
+    escrito = fwrite(&vetor_insere[posicao].media, sizeof(vetor_insere[posicao].media), 1, arquivo_historico);
+    if (escrito != 1) {
+        perror("Erro ao escrever no arquivo.");
+        fclose(arquivo_historico);
+        exit(EXIT_FAILURE);
+    }
+    escrito = fwrite(&vetor_insere[posicao].frequencia, sizeof(vetor_insere[posicao].frequencia), 1, arquivo_historico);
+    if (escrito != 1) {
+        perror("Erro ao escrever no arquivo.");
+        fclose(arquivo_historico);
+        exit(EXIT_FAILURE);
+    }
     posicao++;
     atualizar_auxiliar(0, posicao);
-    // Liberando a memória alocada
-    free(string_buffer);
-    free(new_string_buffer);
+
+    fclose(arquivo_historico);
 }
 
-int obter_auxiliar(int posicao){
-    FILE *arquivo_auxiliar = abrir_criar_arquivo("auxiliar.bin","rb");
-    if(arquivo_auxiliar == NULL){
-        printf("Erro ao abrir arquivo. SAINDO!!!\n");
+int obter_auxiliar(int posicao) {
+    FILE *arquivo_auxiliar = abrir_criar_arquivo("auxiliar.bin", "rb");
+    if (arquivo_auxiliar == NULL) {
+        perror("Erro ao abrir arquivo. SAINDO!!!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -98,31 +110,32 @@ int obter_auxiliar(int posicao){
     return valor;
 }
 
-void atualizar_auxiliar(int posicao, int valor){
+void atualizar_auxiliar(int posicao, int valor) {
     FILE *arquivo_auxiliar = abrir_arquivo("auxiliar.bin", "wb+");
-    if(arquivo_auxiliar == NULL){
-        printf("Erro ao abrir arquivo. SAINDO!!!\n");
+    if (arquivo_auxiliar == NULL) {
+        perror("Erro ao abrir arquivo. SAINDO!!!\n");
         exit(EXIT_FAILURE);
     }
-    int val;
+    // int val;
     fseek(arquivo_auxiliar, posicao, SEEK_SET);
     fwrite(&valor, sizeof(int), 1, arquivo_auxiliar);
-    //rewind(arquivo_auxiliar);
-    //fread(&val,sizeof(int),1,arquivo_auxiliar);
-    //printf("\n%d\n", valor);
+    // rewind(arquivo_auxiliar);
+    // fread(&val,sizeof(int),1,arquivo_auxiliar);
+    // printf("\n%d\n", valor);
     fclose(arquivo_auxiliar);
 }
 
-size_t contar_registros(const char *nome_arquivo){
+size_t contar_registros(const char *nome_arquivo) {
     FILE *arquivo = abrir_arquivo(nome_arquivo, "rb");
+    if (arquivo == NULL) {
+        perror("Erro ao abrir arquivo.");
+        exit(EXIT_FAILURE);
+    }
 
     size_t tamanho_registro = sizeof(REGISTRO);
     size_t tamanho_arquivo = obter_tamanho_arquivo(arquivo);
 
-    if(arquivo == NULL){
-        perror("Erro ao abrir arquivo.");
-    }
-    if(tamanho_registro == 0){
+    if (tamanho_registro == 0) {
         fclose(arquivo);
         return 0; // Evita divisão por zero
     }
@@ -141,15 +154,13 @@ size_t contar_registros(const char *nome_arquivo){
     if(fread()){
 
     }
-    /*if(arquivo == NULL){
+    if(arquivo == NULL){
         arquivo = fopen(nome_Arquivo, "wb+");
-        int offset_cabecalho = -1; // offset_cabecalho indica a posicao do proximo espaco de registro disponivel, -1 indica final da lista encadeada (nao ha proximo espaco)
-        fwrite(&offset_cabecalho, sizeof(int), 1, arquivo);
+        int offset_cabecalho = -1; // offset_cabecalho indica a posicao do proximo espaco de registro disponivel, -1 indica final da lista encadeada (nao ha proximo espaco) fwrite(&offset_cabecalho, sizeof(int), 1, arquivo);
     }
 
     return arquivo;
 }*/
-
 
 /*
 
@@ -178,8 +189,9 @@ void inserirRegistro(FILE *arquivo, Registro reg, Estado *estado) {
     fread(&offset_cabecalho, sizeof(int), 1, arquivo);
 
     fseek(arquivo, 0, SEEK_END);
-    int tamanhoRegistro = sizeof(Registro) + 2 * sizeof(float) + 4 * sizeof(char) + 4 * sizeof(int);
-    int tamanhoTotal = tamanhoRegistro + sizeof(int) + 1; // Inclui '#' e tamanho
+    int tamanhoRegistro = sizeof(Registro) + 2 * sizeof(float) + 4 *
+sizeof(char) + 4 * sizeof(int); int tamanhoTotal = tamanhoRegistro +
+sizeof(int) + 1; // Inclui '#' e tamanho
 
     if (offset_cabecalho == -1) {
         // Adicionar no final
@@ -208,13 +220,13 @@ void inserirRegistro(FILE *arquivo, Registro reg, Estado *estado) {
 }
 
 void removerRegistro(FILE *arquivo, char *idAluno, char *siglaDisciplina, Estado *estado) {
-    fseek(arquivo, sizeof(int), SEEK_SET);
-    int tamanhoTotal;
+    fseek(arquivo, sizeof(int), SEEK_SET); int tamanhoTotal;
     Registro reg;
 
     while (fread(&tamanhoTotal, sizeof(int), 1, arquivo) > 0) {
         fread(&reg, sizeof(Registro), 1, arquivo);
-        if (strncmp(reg.idAluno, idAluno, FIXO_ID) == 0 && strncmp(reg.siglaDisciplina, siglaDisciplina, FIXO_SIGLA) == 0) {
+        if (strncmp(reg.idAluno, idAluno, FIXO_ID) == 0 &&
+            strncmp(reg.siglaDisciplina, siglaDisciplina, FIXO_SIGLA) == 0) {
             // Remover e marcar espaco disponivel
             fseek(arquivo, -sizeof(Registro) - sizeof(int), SEEK_CUR);
             int offsetAtual = ftell(arquivo);
@@ -227,7 +239,8 @@ void removerRegistro(FILE *arquivo, char *idAluno, char *siglaDisciplina, Estado
             fwrite(&offsetAtual, sizeof(int), 1, arquivo);
             break;
         }
-        fseek(arquivo, tamanhoTotal - sizeof(Registro) - sizeof(int), SEEK_CUR);
+        fseek(arquivo, tamanhoTotal - sizeof(Registro) - sizeof(int),
+SEEK_CUR);
     }
 
     // Atualiza a posicao de remocao no estado
@@ -252,7 +265,8 @@ void compactarArquivo(const char* nome_Arquivo) {
             fwrite(&tamanhoTotal, sizeof(int), 1, arquivoTemp);
             fwrite(&reg, sizeof(Registro), 1, arquivoTemp);
         }
-        fseek(arquivo, tamanhoTotal - sizeof(Registro) - sizeof(int), SEEK_CUR);
+        fseek(arquivo, tamanhoTotal - sizeof(Registro) - sizeof(int),
+SEEK_CUR);
     }
 
     fclose(arquivo);
@@ -308,16 +322,98 @@ typedef struct {
     fclose(arquivo_insere);
 
     return vetor_insere;
-} */
+}
+
+void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere, size_t tamanho_vetor_insere) {
+    int posicao = obter_auxiliar(0);
+    printf("Posição atual: %d\n", posicao);
+
+    if (posicao >= tamanho_vetor_insere) {
+        printf("Todos os registros foram inseridos!\n");
+        return;
+    }
+
+    // Calculando o tamanho necessário para a string
+    int tamanho_strings = strlen(vetor_insere[posicao].id_Aluno) + strlen(vetor_insere[posicao].sigla_Disciplina) + strlen(vetor_insere[posicao].nome_Aluno) + strlen(vetor_insere[posicao].nome_Disciplina);
+
+    int tamanho_buffer = tamanho_strings + 4 + 4 + 5; // Contando os separadores e os floats
+    int tamanho_total = tamanho_buffer + 1;           // Para o caractere nulo
+
+    char *string_intermediaria = (char *)malloc(tamanho_total * sizeof(char));
+    if (string_intermediaria == NULL) {
+        perror("Erro ao alocar memória.");
+        exit(EXIT_FAILURE);
+    }
+
+    snprintf(string_intermediaria,
+             tamanho_total,
+             "%s#%s#%s#%s#%.1f#%.1f",
+             vetor_insere[posicao].id_Aluno,
+             vetor_insere[posicao].sigla_Disciplina,
+             vetor_insere[posicao].nome_Aluno,
+             vetor_insere[posicao].nome_Disciplina,
+             vetor_insere[posicao].media,
+             vetor_insere[posicao].frequencia);
+
+    int tamanho_string = strlen(string_intermediaria);
+    int digitos_tamanho = snprintf(NULL, 0, "%d", tamanho_string);
+
+    int tamanho_string_final = digitos_tamanho + tamanho_string + 1;
+    char *string_final = (char *)malloc(tamanho_string_final * sizeof(char));
+    if (string_final == NULL) {
+        perror("Erro ao alocar memória.");
+        free(string_intermediaria);
+        exit(EXIT_FAILURE);
+    }
+
+    char str_aux[20];
+    sprintf(str_aux, "%d", tamanho_string);
+
+    snprintf(string_final,
+             tamanho_string_final,
+             "%d%s",
+             tamanho_string + (int)strlen(str_aux),
+             string_intermediaria);
+
+    printf("String final: (%s)\nTamanho: (%d)\n",
+           string_final,
+           (int)strlen(string_final));
+
+    posicao++;
+    atualizar_auxiliar(0, posicao); // Atualiza a posição
+
+    FILE *arquivo_historico = abrir_criar_arquivo(nome_arquivo_historico, "rb+");
+    if (arquivo_historico == NULL) {
+        perror("Erro ao abrir arquivo. SAINDO!!!\n");
+        free(string_intermediaria);
+        free(string_final);
+        exit(EXIT_FAILURE);
+    }
+    fseek(arquivo_historico, 0, SEEK_END);
+    printf("aaaaaaaaaaaaa %s\n", string_final);
+    size_t escrito = fwrite(string_final, sizeof(char), strlen(string_final), arquivo_historico);
+    if(escrito != 1){
+        perror("Erro ao escrever no arquivo.");
+        fclose(arquivo_historico);
+        exit(EXIT_FAILURE);
+    }
+    fclose(arquivo_historico);
+
+    free(string_intermediaria);
+    free(string_final);
+}
+
+*/
 // FUNÇÕES AUXILIARES
 
-void imprime_vetor_insere(REGISTRO *vetor_insere){
-    for(int i = 0; i<sizeof(vetor_insere);i++){
-        printf("id_aluno: (%s)\n",vetor_insere[i].id_Aluno);
-        printf("sigla: (%s)\n",vetor_insere[i].sigla_Disciplina);
-        printf("nome Aluno: (%s)\n",vetor_insere[i].nome_Aluno);
-        printf("Nome disciplina: (%s)\n",vetor_insere[i].nome_Disciplina);
-        printf("media: (%.2f)\n",vetor_insere[i].media);
-        printf("freq: (%.2f)\n",vetor_insere[i].frequencia);
+void imprime_vetor_insere(REGISTRO *vetor_insere) {
+    for (int i = 0; i < sizeof(vetor_insere); i++) {
+        printf("id_aluno: (%s)\n", vetor_insere[i].id_Aluno);
+        printf("sigla: (%s)\n", vetor_insere[i].sigla_Disciplina);
+        printf("nome Aluno: (%s)\n", vetor_insere[i].nome_Aluno);
+        printf("Nome disciplina: (%s)\n", vetor_insere[i].nome_Disciplina);
+        printf("media: (%.1f)\n", vetor_insere[i].media);
+        printf("freq: (%.1f)\n", vetor_insere[i].frequencia);
+        break;
     }
 }
