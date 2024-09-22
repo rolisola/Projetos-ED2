@@ -55,3 +55,4 @@ bin/*
 obj/*
 *.bin
 *.layout
+*.code-workspace
