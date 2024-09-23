@@ -4,6 +4,7 @@
 #include "registro.h"
 #include "arquivo.h"
 
+// Carrega e retorna um vetor de registros do insere.bin
 REGISTRO *carregar_insere() {
     FILE *arquivo_insere = abrir_arquivo("insere.bin", "rb");
     if (arquivo_insere == NULL) {
@@ -29,9 +30,9 @@ REGISTRO *carregar_insere() {
     return vetor_insere;
 }
 
+// Insere o registro do vetor no historico.bin
 void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere, size_t tamanho_vetor_insere) {
     int posicao = obter_auxiliar(0);
-    printf("Posição atual: %d\n", posicao);
 
     if (posicao >= tamanho_vetor_insere) {
         printf("Todos os registros foram inseridos!\n");
@@ -40,21 +41,18 @@ void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere
 
     char string_completa[256];
     char string_texto[256];
-    // imprime_vetor_insere(vetor_insere);
+
     snprintf(string_texto, sizeof(string_texto), "%s#%s#%s#%s",
              vetor_insere[posicao].id_Aluno,
              vetor_insere[posicao].sigla_Disciplina,
              vetor_insere[posicao].nome_Aluno,
              vetor_insere[posicao].nome_Disciplina);
-    // int tamanho_string = strlen(string_texto);
-    // printf("%d%s\n", (int)strlen(string_texto), string_texto);
 
     snprintf(string_completa, sizeof(string_completa), "%s#%.1f#%.1f",
              string_texto,
              vetor_insere[posicao].media,
              vetor_insere[posicao].frequencia);
 
-    // printf("%d%s\n", (int)strlen(string_completa), string_completa);
     FILE *arquivo_historico = abrir_criar_arquivo(nome_arquivo_historico, "ab+");
     if (arquivo_historico == NULL) {
         perror("Erro ao abrir arquivo.");
@@ -87,12 +85,15 @@ void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere
         fclose(arquivo_historico);
         exit(EXIT_FAILURE);
     }
+
     posicao++;
     atualizar_auxiliar(0, posicao);
 
     fclose(arquivo_historico);
 }
 
+// Obtem o valor de quantos registros já foram gravados
+// Possiveis valores de entrada: 0 (insere.bin), 1 (busca_p.bin), 2 (busca_s.bin)
 int obter_auxiliar(int posicao) {
     FILE *arquivo_auxiliar = abrir_criar_arquivo("auxiliar.bin", "rb");
     if (arquivo_auxiliar == NULL) {
@@ -102,29 +103,27 @@ int obter_auxiliar(int posicao) {
 
     int valor;
 
-    fseek(arquivo_auxiliar, posicao, 0);
+    fseek(arquivo_auxiliar, posicao, SEEK_SET);
     fread(&valor, sizeof(int), 1, arquivo_auxiliar);
-
     fclose(arquivo_auxiliar);
 
     return valor;
 }
 
+// Atualiza valor de quantos registros foram usados do insere.bin, busca_p.bin e busca_s.bin
 void atualizar_auxiliar(int posicao, int valor) {
     FILE *arquivo_auxiliar = abrir_arquivo("auxiliar.bin", "wb+");
     if (arquivo_auxiliar == NULL) {
         perror("Erro ao abrir arquivo. SAINDO!!!\n");
         exit(EXIT_FAILURE);
     }
-    // int val;
+
     fseek(arquivo_auxiliar, posicao, SEEK_SET);
     fwrite(&valor, sizeof(int), 1, arquivo_auxiliar);
-    // rewind(arquivo_auxiliar);
-    // fread(&val,sizeof(int),1,arquivo_auxiliar);
-    // printf("\n%d\n", valor);
     fclose(arquivo_auxiliar);
 }
 
+// Conta a quantidade de registros existentes no arquivo
 size_t contar_registros(const char *nome_arquivo) {
     FILE *arquivo = abrir_arquivo(nome_arquivo, "rb");
     if (arquivo == NULL) {
@@ -147,6 +146,94 @@ size_t contar_registros(const char *nome_arquivo) {
     return num_registros;
 }
 
+// Função de comparação para ordenar e buscar usando keysorting
+int comparador_chave_primaria(const void *a, const void *b) {
+    IndicePrimario *ia = (IndicePrimario *)a;
+    IndicePrimario *ib = (IndicePrimario *)b;
+
+    int resultado_id = strcmp(ia->id_Aluno, ib->id_Aluno);
+    if (resultado_id != 0)
+        return resultado_id;
+
+    return strcmp(ia->sigla_Disciplina, ib->sigla_Disciplina);
+}
+
+void pesquisar_por_chave_primaria(FILE *dados, FILE *indice, FILE *busca_p) {
+    ChavePrimaria chave_busca;
+    IndicePrimario *entradas_indice;
+    int quantidade_registros, encontrado = 0;
+
+    // Abrir o arquivo de índice
+    indice = fopen("indice_primario.dat", "rb");
+    if (indice == NULL) {
+        printf("Erro ao abrir o arquivo de índice primário.\n");
+        return;
+    }
+
+    // Carregar todas as entradas de índice para a memória
+    fseek(indice, 0, SEEK_END);
+    long tamanho_arquivo = ftell(indice);
+    fseek(indice, 0, SEEK_SET);
+
+    quantidade_registros = tamanho_arquivo / sizeof(IndicePrimario);
+    entradas_indice = (IndicePrimario *)malloc(quantidade_registros * sizeof(IndicePrimario));
+    if (entradas_indice == NULL) {
+        perror("Erro ao alocar memória para o índice.\n");
+        fclose(indice);
+        return;
+    }
+
+    fread(entradas_indice, sizeof(IndicePrimario), quantidade_registros, indice);
+    fclose(indice);
+
+    // Ordenar as entradas utilizando keysorting
+    qsort(entradas_indice, quantidade_registros, sizeof(IndicePrimario), comparador_chave_primaria);
+
+    // Abrir o arquivo busca_p.bin para ler as chaves de busca
+    busca_p = fopen("busca_p.bin", "rb");
+    if (busca_p == NULL) {
+        printf("Erro ao abrir o arquivo de busca_p.bin.\n");
+        free(entradas_indice);
+        return;
+    }
+
+    // Ler as chaves primárias (ID do aluno + Sigla da disciplina) do arquivo binário busca_p.bin
+    while (fread(&chave_busca, sizeof(ChavePrimaria), 1, busca_p) > 0) {
+        // Realizar a busca binária para cada chave do arquivo
+        IndicePrimario chave_para_busca;
+        strcpy(chave_para_busca.id_Aluno, chave_busca.id_Aluno);
+        strcpy(chave_para_busca.sigla_Disciplina, chave_busca.sigla_Disciplina);
+
+        IndicePrimario *resultado = (IndicePrimario *)bsearch(&chave_para_busca, entradas_indice,
+                                                              quantidade_registros, sizeof(IndicePrimario),
+                                                              comparador_chave_primaria);
+
+        if (resultado == NULL) {
+            printf("Registro com ID '%s' e Sigla '%s' não encontrado.\n",
+                   chave_busca.id_Aluno, chave_busca.sigla_Disciplina);
+        } else {
+            // Se encontrou, posiciona o ponteiro do arquivo de dados no offset encontrado
+            fseek(dados, resultado->offset, SEEK_SET);
+
+            // Ler o registro do arquivo de dados
+            REGISTRO reg;
+            fread(&reg, sizeof(REGISTRO), 1, dados);
+
+            // Exibir os dados do registro
+            printf("\nRegistro encontrado:\n");
+            printf("ID: %s\n", reg.id_Aluno);
+            printf("Sigla da Disciplina: %s\n", reg.sigla_Disciplina);
+            printf("Nome do Aluno: %s\n", reg.nome_Aluno);
+            printf("Nome da Disciplina: %s\n", reg.nome_Disciplina);
+            printf("Média: %.2f\n", reg.media);
+            printf("Frequência: %.2f\n", reg.frequencia);
+        }
+    }
+
+    fclose(busca_p);
+    free(entradas_indice);
+}
+
 // Carrega o arquivo de histórico
 /*FILE *carregar_Historico(const char* nome_Arquivo){
 
@@ -162,248 +249,6 @@ size_t contar_registros(const char *nome_arquivo) {
     return arquivo;
 }*/
 
-/*
-
-void salvarEstado(Estado estado) {
-    FILE *estadoFile = fopen("estado.bin", "wb+");
-    fwrite(&estado, sizeof(Estado), 1, estadoFile);
-    fclose(estadoFile);
-}
-
-Estado carregarEstado() {
-    Estado estado = {0, 0};  // Inicializa com 0 caso o arquivo nao exista
-
-    FILE *estadoFile = fopen("estado.bin", "rb");
-    if (estadoFile != NULL) {
-        fread(&estado, sizeof(Estado), 1, estadoFile);
-        fclose(estadoFile);
-    }
-
-    return estado;
-}
-
-void inserirRegistro(FILE *arquivo, Registro reg, Estado *estado) {
-    fseek(arquivo, 0, SEEK_SET);
-
-    int offset_cabecalho;
-    fread(&offset_cabecalho, sizeof(int), 1, arquivo);
-
-    fseek(arquivo, 0, SEEK_END);
-    int tamanhoRegistro = sizeof(Registro) + 2 * sizeof(float) + 4 *
-sizeof(char) + 4 * sizeof(int); int tamanhoTotal = tamanhoRegistro +
-sizeof(int) + 1; // Inclui '#' e tamanho
-
-    if (offset_cabecalho == -1) {
-        // Adicionar no final
-        fwrite(&tamanhoTotal, sizeof(int), 1, arquivo);
-        fwrite(&reg, sizeof(Registro), 1, arquivo);
-    } else {
-        // Implementacao de first-fit (simplificada)
-        fseek(arquivo, offset_cabecalho, SEEK_SET);
-        EspacoDisponivel espaco;
-        fread(&espaco, sizeof(EspacoDisponivel), 1, arquivo);
-
-        if (espaco.tamanho >= tamanhoTotal) {
-            fseek(arquivo, offset_cabecalho, SEEK_SET);
-            fwrite(&tamanhoTotal, sizeof(int), 1, arquivo);
-            fwrite(&reg, sizeof(Registro), 1, arquivo);
-        } else {
-            fseek(arquivo, 0, SEEK_END);
-            fwrite(&tamanhoTotal, sizeof(int), 1, arquivo);
-            fwrite(&reg, sizeof(Registro), 1, arquivo);
-        }
-    }
-
-    // Atualiza a posicao de insercao no estado
-    estado->posInsercao++;
-    salvarEstado(*estado);
-}
-
-void removerRegistro(FILE *arquivo, char *idAluno, char *siglaDisciplina, Estado *estado) {
-    fseek(arquivo, sizeof(int), SEEK_SET); int tamanhoTotal;
-    Registro reg;
-
-    while (fread(&tamanhoTotal, sizeof(int), 1, arquivo) > 0) {
-        fread(&reg, sizeof(Registro), 1, arquivo);
-        if (strncmp(reg.idAluno, idAluno, FIXO_ID) == 0 &&
-            strncmp(reg.siglaDisciplina, siglaDisciplina, FIXO_SIGLA) == 0) {
-            // Remover e marcar espaco disponivel
-            fseek(arquivo, -sizeof(Registro) - sizeof(int), SEEK_CUR);
-            int offsetAtual = ftell(arquivo);
-            fwrite(&tamanhoTotal, sizeof(int), 1, arquivo);
-            int proxOffset = -1; // ultimo da lista
-            fwrite(&proxOffset, sizeof(int), 1, arquivo);
-
-            // Atualizar cabecalho
-            fseek(arquivo, 0, SEEK_SET);
-            fwrite(&offsetAtual, sizeof(int), 1, arquivo);
-            break;
-        }
-        fseek(arquivo, tamanhoTotal - sizeof(Registro) - sizeof(int),
-SEEK_CUR);
-    }
-
-    // Atualiza a posicao de remocao no estado
-    estado->posRemocao++;
-    salvarEstado(*estado);
-}
-
-void compactarArquivo(const char* nome_Arquivo) {
-    FILE *arquivo = carregarArquivo(nome_Arquivo);
-    FILE *arquivoTemp = fopen("temp.bin", "wb+");
-    int offset_cabecalho;
-    fseek(arquivo, 0, SEEK_SET);
-    fread(&offset_cabecalho, sizeof(int), 1, arquivo);
-
-    fseek(arquivo, sizeof(int), SEEK_SET);
-    int tamanhoTotal;
-    Registro reg;
-
-    while (fread(&tamanhoTotal, sizeof(int), 1, arquivo) > 0) {
-        fread(&reg, sizeof(Registro), 1, arquivo);
-        if (reg.idAluno[0] != '*') {
-            fwrite(&tamanhoTotal, sizeof(int), 1, arquivoTemp);
-            fwrite(&reg, sizeof(Registro), 1, arquivoTemp);
-        }
-        fseek(arquivo, tamanhoTotal - sizeof(Registro) - sizeof(int),
-SEEK_CUR);
-    }
-
-    fclose(arquivo);
-    fclose(arquivoTemp);
-
-    remove(nomeArquivo);
-    rename("temp.bin", nomeArquivo);
-
-    carregarArquivo(nomeArquivo);
-}*/
-/*
-#define MAX_NOME 50
-#define FIXO_ID 3
-#define FIXO_SIGLA 3
-*/
-/*
-typedef struct {
-    char idAluno[FIXO_ID + 1];
-    char siglaDisciplina[FIXO_SIGLA + 1];
-    char nomeAluno[MAX_NOME + 1];
-    char nomeDisciplina[MAX_NOME + 1];
-    float media;
-    float frequencia;
-} Registro;
-
-typedef struct {
-    int tamanho;
-    int prox;
-} EspacoDisponivel;
-
-typedef struct {
-    int posInsercao;
-    int posRemocao;
-} Estado;
-*/
-
-// FUNÇÕES ALTERNATIVAS
-/*REGISTRO* carregar_insere(){
-    FILE *arquivo_insere = abrir_arquivo("insere.bin", "rb");
-    if(arquivo_insere == NULL){
-        printf("Erro ao abrir arquivo. SAINDO!!!!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    size_t tamanho_arquivo = obter_tamanho_arquivo(arquivo_insere);
-    unsigned int qtd = tamanho_arquivo / sizeof(REGISTRO);
-
-    REGISTRO *vetor_insere = (REGISTRO*) malloc(qtd * sizeof(REGISTRO));
-    for(int i = 0; i < qtd; i++){
-        fread(&vetor_insere[i], sizeof(REGISTRO), 1, arquivo_insere);
-    }
-
-    fclose(arquivo_insere);
-
-    return vetor_insere;
-}
-
-void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere, size_t tamanho_vetor_insere) {
-    int posicao = obter_auxiliar(0);
-    printf("Posição atual: %d\n", posicao);
-
-    if (posicao >= tamanho_vetor_insere) {
-        printf("Todos os registros foram inseridos!\n");
-        return;
-    }
-
-    // Calculando o tamanho necessário para a string
-    int tamanho_strings = strlen(vetor_insere[posicao].id_Aluno) + strlen(vetor_insere[posicao].sigla_Disciplina) + strlen(vetor_insere[posicao].nome_Aluno) + strlen(vetor_insere[posicao].nome_Disciplina);
-
-    int tamanho_buffer = tamanho_strings + 4 + 4 + 5; // Contando os separadores e os floats
-    int tamanho_total = tamanho_buffer + 1;           // Para o caractere nulo
-
-    char *string_intermediaria = (char *)malloc(tamanho_total * sizeof(char));
-    if (string_intermediaria == NULL) {
-        perror("Erro ao alocar memória.");
-        exit(EXIT_FAILURE);
-    }
-
-    snprintf(string_intermediaria,
-             tamanho_total,
-             "%s#%s#%s#%s#%.1f#%.1f",
-             vetor_insere[posicao].id_Aluno,
-             vetor_insere[posicao].sigla_Disciplina,
-             vetor_insere[posicao].nome_Aluno,
-             vetor_insere[posicao].nome_Disciplina,
-             vetor_insere[posicao].media,
-             vetor_insere[posicao].frequencia);
-
-    int tamanho_string = strlen(string_intermediaria);
-    int digitos_tamanho = snprintf(NULL, 0, "%d", tamanho_string);
-
-    int tamanho_string_final = digitos_tamanho + tamanho_string + 1;
-    char *string_final = (char *)malloc(tamanho_string_final * sizeof(char));
-    if (string_final == NULL) {
-        perror("Erro ao alocar memória.");
-        free(string_intermediaria);
-        exit(EXIT_FAILURE);
-    }
-
-    char str_aux[20];
-    sprintf(str_aux, "%d", tamanho_string);
-
-    snprintf(string_final,
-             tamanho_string_final,
-             "%d%s",
-             tamanho_string + (int)strlen(str_aux),
-             string_intermediaria);
-
-    printf("String final: (%s)\nTamanho: (%d)\n",
-           string_final,
-           (int)strlen(string_final));
-
-    posicao++;
-    atualizar_auxiliar(0, posicao); // Atualiza a posição
-
-    FILE *arquivo_historico = abrir_criar_arquivo(nome_arquivo_historico, "rb+");
-    if (arquivo_historico == NULL) {
-        perror("Erro ao abrir arquivo. SAINDO!!!\n");
-        free(string_intermediaria);
-        free(string_final);
-        exit(EXIT_FAILURE);
-    }
-    fseek(arquivo_historico, 0, SEEK_END);
-    printf("aaaaaaaaaaaaa %s\n", string_final);
-    size_t escrito = fwrite(string_final, sizeof(char), strlen(string_final), arquivo_historico);
-    if(escrito != 1){
-        perror("Erro ao escrever no arquivo.");
-        fclose(arquivo_historico);
-        exit(EXIT_FAILURE);
-    }
-    fclose(arquivo_historico);
-
-    free(string_intermediaria);
-    free(string_final);
-}
-
-*/
 // FUNÇÕES AUXILIARES
 
 void imprime_vetor_insere(REGISTRO *vetor_insere) {

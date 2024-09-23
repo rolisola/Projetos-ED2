@@ -10,6 +10,7 @@ int main() {
     int opcao;
     const char *nome_arquivo_historico = "historico.bin";
     const char *nome_arquivo_insere = "insere.bin";
+    const char *nome_arquivo_indice = "indice.bin";
     const char *nome_arquivo_busca_primaria = "busca_p.bin";
     const char *nome_arquivo_busca_secundaria = "busca_s.bin";
     const char *nome_arquivo_auxiliar = "auxiliar.bin";
@@ -41,6 +42,10 @@ int main() {
 
         case 2:
             printf("\n");
+            //FILE *ah = abrir_arquivo(nome_arquivo_historico, "rb");
+            //FILE *ai; // = abrir_arquivo(nome_arquivo_indice, "rb");
+            //FILE *abp; // = abrir_arquivo(nome_arquivo_busca_primaria, "rb");
+            pesquisar_por_chave_primaria(nome_arquivo_historico, nome_arquivo_indice, nome_arquivo_busca_primaria);
             break;
 
         case 3:

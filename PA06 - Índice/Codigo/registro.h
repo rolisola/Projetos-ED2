@@ -14,32 +14,26 @@ typedef struct {
     float frequencia;
 } REGISTRO;
 
-/*typedef struct{
-    int tamanho;
-    int prox;
-}EspacoDisponivel;*/
+typedef struct {
+    char id_Aluno[FIXO_ID + 1];
+    char sigla_Disciplina[FIXO_SIGLA + 1];
+    long offset; // Deslocamento no arquivo de dados
+} IndicePrimario;
 
 typedef struct {
-    int posInsercao;
-    int posRemocao;
-} Estado;
+    char id_Aluno[FIXO_ID + 1];
+    char sigla_Disciplina[FIXO_SIGLA + 1];
+} ChavePrimaria;
 
 REGISTRO *carregar_insere();
 void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere, size_t tamanho_vetor_insere);
 int obter_auxiliar(int posicao);
 void atualizar_auxiliar(int posicao, int valor);
 size_t contar_registros(const char *nome_arquivo);
+int comparador_chave_primaria(const void *a, const void *b);
+void pesquisar_por_chave_primaria(const char *nome_arquivo_historico, const char *nome_arquivo_indice, const char *nome_arquivo_busca_primaria);
 
 // FUNÇÕES AUXILIARES
-
 void imprime_vetor_insere(REGISTRO *vetor_insere);
-
-// Funcoes relacionadas a arquivos e registros
-// FILE* carregar_Historico(const char* nomeArquivo);
-// void salvarEstado(Estado estado);
-// Estado carregarEstado();
-// void inserirRegistro(FILE *arquivo, Registro reg, Estado *estado);
-// void removerRegistro(FILE *arquivo, char *idAluno, char *siglaDisciplina, Estado *estado);
-// void compactarArquivo(const char* nomeArquivo);
 
 #endif
