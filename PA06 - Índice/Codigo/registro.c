@@ -31,6 +31,32 @@ REGISTRO *carregar_insere() {
 }
 
 // Insere o registro do vetor no historico.bin
+void inserir_registro(REGISTRO *vetor_insere, const char *nome_arquivo_dados) {
+    int posicao = obter_auxiliar(0);
+    printf("Inserindo registro: %d\n", posicao + 1);
+
+    char string_buffer[256];
+    // Preenchendo o buffer
+    snprintf(string_buffer, sizeof(string_buffer), "%s#%s#%s#%s#%.1f#%.1f",
+             vetor_insere[posicao].id_Aluno,
+             vetor_insere[posicao].sigla_Disciplina,
+             vetor_insere[posicao].nome_Aluno,
+             vetor_insere[posicao].nome_Disciplina,
+             vetor_insere[posicao].media,
+             vetor_insere[posicao].frequencia);
+    printf("%s\n", string_buffer);
+
+    // Calculando o comprimento da string gerada e quantos dígitos são necessários para armazenar esse tamanho
+    int tamanho_string = strlen(string_buffer);
+    
+    posicao++;
+    atualizar_auxiliar(0, posicao);
+
+    // Liberando a memória alocada
+    free(string_buffer);
+}
+
+/*
 void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere, size_t tamanho_vetor_insere) {
     int posicao = obter_auxiliar(0);
 
@@ -90,7 +116,7 @@ void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere
     atualizar_auxiliar(0, posicao);
 
     fclose(arquivo_historico);
-}
+}*/
 
 // Obtem o valor de quantos registros já foram gravados
 // Possiveis valores de entrada: 0 (insere.bin), 1 (busca_p.bin), 2 (busca_s.bin)
@@ -158,7 +184,56 @@ int comparador_chave_primaria(const void *a, const void *b) {
     return strcmp(ia->sigla_Disciplina, ib->sigla_Disciplina);
 }
 
-void pesquisar_por_chave_primaria(FILE *dados, FILE *indice, FILE *busca_p) {
+/*
+void inserir_registro(REGISTRO *vetor_insere){
+    int posicao = obter_auxiliar(0);
+    printf("posicao: %d\n", posicao);
+    // Calculando o tamanho necessário para a string
+    int tamanho_strings = strlen(vetor_insere[posicao].id_Aluno) +
+                          strlen(vetor_insere[posicao].sigla_Disciplina) +
+                          strlen(vetor_insere[posicao].nome_Aluno) +
+                          strlen(vetor_insere[posicao].nome_Disciplina);
+    // Contando os separadores (#) e os dois floats com precisão %.1f (aproximadamente 4 caracteres cada)
+    int tamanho_buffer = tamanho_strings + 4 + 4 + 5; // 5 separadores #
+    // Criando espaço extra para o caractere nulo \0
+    int tamanho_total = tamanho_buffer + 1; // Para o \0
+    // Alocando a memória para o string_buffer
+    char *string_buffer = (char *)malloc(tamanho_total * sizeof(char));
+    if(string_buffer == NULL){
+        printf("Erro ao alocar memória.\n");
+        return;
+    }
+    // Preenchendo o buffer
+    snprintf(string_buffer, tamanho_total, "%s#%s#%s#%s#%.1f#%.1f",
+             vetor_insere[posicao].id_Aluno,
+             vetor_insere[posicao].sigla_Disciplina,
+             vetor_insere[posicao].nome_Aluno,
+             vetor_insere[posicao].nome_Disciplina,
+             vetor_insere[posicao].media,
+             vetor_insere[posicao].frequencia);
+    // Calculando o comprimento da string gerada e quantos dígitos são necessários para armazenar esse tamanho
+    int tamanho_string = strlen(string_buffer);
+    int digitos_tamanho = snprintf(NULL, 0, "%d", tamanho_string); // Quantidade de dígitos do tamanho
+    // Criando espaço para a nova string com o tamanho incluído no início
+    int tamanho_string_final = digitos_tamanho + tamanho_string + 1; // +1 para o \0
+    char *new_string_buffer = (char *)malloc(tamanho_string_final * sizeof(char));
+    if(new_string_buffer == NULL){
+        printf("Erro ao alocar memória.\n");
+        free(string_buffer); // Liberando string_buffer em caso de erro
+        return;
+    }
+    snprintf(new_string_buffer, tamanho_string_final, "%d%s", tamanho_string, string_buffer);
+    // Exibindo as strings resultantes
+    printf("String final: (%s)\nTamanho: (%d)\n", new_string_buffer, (int)strlen(new_string_buffer));
+    posicao++;
+    atualizar_auxiliar(0, posicao);
+    // Liberando a memória alocada
+    free(string_buffer);
+    free(new_string_buffer);
+}
+*/
+
+/*void pesquisar_por_chave_primaria(const char *nome_arquivo_historico, const char *nome_arquivo_indice, const char *nome_arquivo_busca_primaria) {
     ChavePrimaria chave_busca;
     IndicePrimario *entradas_indice;
     int quantidade_registros, encontrado = 0;
@@ -232,7 +307,7 @@ void pesquisar_por_chave_primaria(FILE *dados, FILE *indice, FILE *busca_p) {
 
     fclose(busca_p);
     free(entradas_indice);
-}
+}*/
 
 // Carrega o arquivo de histórico
 /*FILE *carregar_Historico(const char* nome_Arquivo){
