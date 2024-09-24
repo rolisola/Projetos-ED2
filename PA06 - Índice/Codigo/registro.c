@@ -31,8 +31,13 @@ REGISTRO *carregar_insere() {
 }
 
 // Insere o registro do vetor no historico.bin
-void inserir_registro(REGISTRO *vetor_insere, const char *nome_arquivo_dados) {
+void inserir_registro(const char *nome_arquivo_dados, REGISTRO *vetor_insere, size_t tamanho_vetor_insere) {
     int posicao = obter_auxiliar(0);
+    if (posicao >= tamanho_vetor_insere) {
+        printf("Todos os registros foram inseridos!\n");
+        return;
+    }
+
     printf("Inserindo registro: %d\n", posicao + 1);
 
     char string_buffer[256];
@@ -44,16 +49,18 @@ void inserir_registro(REGISTRO *vetor_insere, const char *nome_arquivo_dados) {
              vetor_insere[posicao].nome_Disciplina,
              vetor_insere[posicao].media,
              vetor_insere[posicao].frequencia);
-    printf("%s\n", string_buffer);
+    printf("%d%s\n", (int)strlen(string_buffer), string_buffer);
 
-    // Calculando o comprimento da string gerada e quantos dígitos são necessários para armazenar esse tamanho
     int tamanho_string = strlen(string_buffer);
-    
+
     posicao++;
     atualizar_auxiliar(0, posicao);
 
-    // Liberando a memória alocada
-    free(string_buffer);
+    FILE *arquivo_dados = abrir_criar_arquivo(nome_arquivo_dados, "ab+");
+
+    fwrite(&tamanho_string, sizeof(int), 1, arquivo_dados);
+    fwrite(string_buffer, strlen(string_buffer), 1, arquivo_dados);
+    fclose(arquivo_dados);
 }
 
 /*

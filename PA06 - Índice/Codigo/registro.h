@@ -27,7 +27,7 @@ typedef struct {
 
 REGISTRO *carregar_insere();
 // void inserir_registro(const char *nome_arquivo_historico, REGISTRO *vetor_insere, size_t tamanho_vetor_insere);
-void inserir_registro(REGISTRO *vetor_insere, const char *nome_arquivo_dados);
+void inserir_registro( const char *nome_arquivo_dados, REGISTRO *vetor_insere,size_t tamanho_vetor_insere);
 int obter_auxiliar(int posicao);
 void atualizar_auxiliar(int posicao, int valor);
 size_t contar_registros(const char *nome_arquivo);

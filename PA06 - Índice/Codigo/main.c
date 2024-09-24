@@ -5,6 +5,7 @@
 
 int main() {
     remove("historico.bin");
+    remove("dados.bin");
     remove("auxiliar.bin");
 
     int opcao;
@@ -31,6 +32,7 @@ int main() {
         printf("1. Inserção\n");
         printf("2. Busca Primária\n");
         printf("3. Busca Secundária\n");
+        printf("4. Sair e salvar\n");
         printf("0. Sair\n");
         printf("Opção: ");
         scanf("%d", &opcao);
@@ -38,12 +40,12 @@ int main() {
         case 1:
             printf("Inserindo.\n");
             // inserir_registro(nome_arquivo_dados, vr, tamanho_vetor_inserir);
-            inserir_registro(vr, nome_arquivo_dados);
+            inserir_registro(nome_arquivo_dados, vr, tamanho_vetor_inserir);
             break;
 
         case 2:
             printf("Buscando.\n");
-            //pesquisar_por_chave_primaria(nome_arquivo_dados, nome_arquivo_indice, nome_arquivo_busca_primaria);
+            // pesquisar_por_chave_primaria(nome_arquivo_dados, nome_arquivo_indice, nome_arquivo_busca_primaria);
             break;
 
         case 3:
