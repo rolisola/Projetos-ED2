@@ -1,32 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "arquivo.h"
 #include "registro.h"
 
 int main() {
-    remove("historico.bin");
-    remove("dados.bin");
-    remove("auxiliar.bin");
-
     int opcao;
     const char *nome_arquivo_dados = "dados.bin";
-    const char *nome_arquivo_indice = "indice.bin";
     const char *nome_arquivo_insere = "insere.bin";
     const char *nome_arquivo_busca_primaria = "busca_p.bin";
+    const char *primary_index_filename = "indice_primario.bin";
     const char *nome_arquivo_busca_secundaria = "busca_s.bin";
-    const char *nome_arquivo_auxiliar = "auxiliar.bin";
+    const char *secondary_index_filename = "indice_secundario.bin";
 
-    FILE *arquivo_auxiliar = abrir_criar_arquivo(nome_arquivo_auxiliar, "wb+");
-    int valor = 0;
-    fwrite(&valor, sizeof(int), 1, arquivo_auxiliar);
-    fwrite(&valor, sizeof(int), 1, arquivo_auxiliar);
-    fwrite(&valor, sizeof(int), 1, arquivo_auxiliar);
-    fclose(arquivo_auxiliar);
-
-    REGISTRO *vr;
-    vr = carregar_insere();
+    REGISTRO *vetor_registros;
+    vetor_registros = carregar_insere(nome_arquivo_insere);
     size_t tamanho_vetor_inserir = contar_registros(nome_arquivo_insere);
-    // a(vr);
+    //imprime_vetor_insere(vetor_registros, tamanho_vetor_inserir);
+
+    CHAVEPRIMARIA *vetor_chave_primaria;
+    vetor_chave_primaria = carregar_busca_primaria(nome_arquivo_busca_primaria);
+    size_t tamanho_vetor_busca_primaria = contar_registros(nome_arquivo_busca_primaria);
+    //imprime_vetor_chave_primaria(vetor_chave_primaria, tamanho_vetor_busca_primaria);
+
     do {
         printf("Menu:\n");
         printf("1. Inserção\n");
@@ -39,13 +33,12 @@ int main() {
         switch (opcao) {
         case 1:
             printf("Inserindo.\n");
-            // inserir_registro(nome_arquivo_dados, vr, tamanho_vetor_inserir);
-            inserir_registro(nome_arquivo_dados, vr, tamanho_vetor_inserir);
+            inserir_registro(nome_arquivo_dados, primary_index_filename, secondary_index_filename, vetor_registros, tamanho_vetor_inserir);
             break;
 
         case 2:
             printf("Buscando.\n");
-            // pesquisar_por_chave_primaria(nome_arquivo_dados, nome_arquivo_indice, nome_arquivo_busca_primaria);
+            buscar_por_chave_primaria(nome_arquivo_dados, vetor_chave_primaria, tamanho_vetor_busca_primaria);
             break;
 
         case 3:
