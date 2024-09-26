@@ -37,14 +37,19 @@ void inserir_registro(const char *data_filename, const char *primary_index_filen
     // Escrever o registro no arquivo de dados
     fwrite(&record_size, sizeof(int), 1, data_file);
     long offset = ftell(data_file);
+    printf("Offset %d\n", offset);
     fwrite(buffer, sizeof(char), record_size, data_file);
 
     // Atualizar índice primário
     primary_index = realloc(primary_index, (primary_index_size + 1) * sizeof(IndexEntry));
     snprintf(primary_index[primary_index_size].id, FIXO_ID + 1, "%s", vetor_registro[posicao].id_Aluno);
+    //printf("Index primario idAluno %s\n", primary_index[primary_index_size].id);
     snprintf(primary_index[primary_index_size].sigla, FIXO_SIGLA + 1, "%s", vetor_registro[posicao].sigla_Disciplina);
-    primary_index[primary_index_size].offset = offset - sizeof(int) - record_size;
+    //printf("Index primario sigladisc %s\n", primary_index[primary_index_size].sigla);
+    primary_index[primary_index_size].offset = offset;// - sizeof(int) - record_size;  <---- pq colocou isso aqui????
     primary_index_size++;
+    //printf("Primary_index_size %d\n", primary_index_size);
+    
 
     // Atualizar índice secundário
     int nome_index = -1;
@@ -89,40 +94,44 @@ void inserir_registro(const char *data_filename, const char *primary_index_filen
 void buscar_por_chave_primaria(const char *data_filename, CHAVEPRIMARIA *vetor_busca_primaria, size_t tamanho_vetor_busca_primaria) {
     int posicao = obter_auxiliar(1);
     if (posicao >= tamanho_vetor_busca_primaria) {
-        printf("Todas as buscas por chave primária já foram realizadas!\n");
+        printf("Todas as buscas por chave primaria ja foram realizadas!\n");
         return;
     }
+    
     posicao++;
     printf("Buscando chave: %d\n", posicao);
     atualizar_auxiliar(1, posicao);
 
-    /*
-     IndexEntry key;
-     snprintf(key.id, FIXO_ID + 1, "%s", primary_key);
-     snprintf(key.sigla, FIXO_SIGLA + 1, "%s", primary_key + FIXO_ID); // Assume que a chave é concatenada: ID+Sigla
+    char bufferkey[18];
+    IndexEntry key;
+    printf("%s\n", key[posicao].id);
+    //snprintf(buffer, sizeof(buffer), "%s", key);
+    //snprintf(key.sigla, FIXO_SIGLA + 1, "%s", key); // Assume que a chave é concatenada: ID+Sigla
+    snprintf(bufferkey, sizeof(bufferkey), "%s %s ", key.id, key.sigla);
+    printf("%s\n", key);
 
-     IndexEntry *result = bsearch(&key, primary_index, primary_index_size, sizeof(IndexEntry), compare_primary_index);
+    IndexEntry *result = bsearch(&key, primary_index, primary_index_size, sizeof(IndexEntry), compare_primary_index);
 
-     if (result) {
-         FILE *data_file = fopen(data_filename, "rb");
-         if (!data_file) {
-             perror("Erro ao abrir o arquivo de dados");
-             return;
-         }
+    if (result) {
+        FILE *data_file = fopen(data_filename, "rb");
+        if (!data_file) {
+            perror("Erro ao abrir o arquivo de dados");
+            return;
+        }
 
-         fseek(data_file, result->offset, SEEK_SET);
-         int record_size;
-         fread(&record_size, sizeof(int), 1, data_file);
+        fseek(data_file, result->offset, SEEK_SET);
+        int record_size;
+        fread(&record_size, sizeof(int), 1, data_file);
 
-         char buffer[record_size + 1];
-         fread(buffer, sizeof(char), record_size, data_file);
-         buffer[record_size] = '\0';
+        char buffer[record_size + 1];
+        fread(buffer, sizeof(char), record_size, data_file);
+        buffer[record_size] = '\0';
 
-         printf("Registro encontrado: %s\n", buffer);
-         fclose(data_file);
+        printf("Registro encontrado: %s\n", buffer);
+        fclose(data_file);
      } else {
-         printf("Registro não encontrado\n");
-     }*/
+        printf("Registro não encontrado\n");
+     }
 }
 
 // FUNÇÕES AUXILIARES //
@@ -192,7 +201,7 @@ int obter_auxiliar(int posicao) {
         exit(EXIT_FAILURE);
     }
 
-    int valor = 0;
+    int valor = 1;
 
     fseek(arquivo_auxiliar, posicao, SEEK_SET);
     fread(&valor, sizeof(int), 1, arquivo_auxiliar);
