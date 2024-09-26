@@ -64,7 +64,7 @@ FILE *abrir_criar_arquivo(const char *nome_arquivo, const char *modo) {
     if (arquivo == NULL) {
         if (errno == ENOENT) {
             // Se o arquivo não existe, cria o arquivo
-            printf("Arquivo inexistente. Criando.\n");
+            //printf("Arquivo inexistente. Criando.\n");
             arquivo = criar_arquivo(nome_arquivo, modo);
         } else {
             // Se o erro não for 'file not found', exibe mensagem de erro
