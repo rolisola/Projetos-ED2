@@ -37,7 +37,7 @@ void inserir_registro(const char *data_filename, const char *primary_index_filen
     // Escrever o registro no arquivo de dados
     fwrite(&record_size, sizeof(int), 1, data_file);
     long offset = ftell(data_file);
-    printf("Offset %d\n", offset);
+    //printf("Offset %d\n", offset);
     fwrite(buffer, sizeof(char), record_size, data_file);
 
     // Atualizar índice primário
@@ -49,7 +49,7 @@ void inserir_registro(const char *data_filename, const char *primary_index_filen
     primary_index[primary_index_size].offset = offset;// - sizeof(int) - record_size;  <---- pq colocou isso aqui????
     primary_index_size++;
     //printf("Primary_index_size %d\n", primary_index_size);
-    
+
 
     // Atualizar índice secundário
     int nome_index = -1;
@@ -92,47 +92,69 @@ void inserir_registro(const char *data_filename, const char *primary_index_filen
 }
 
 void buscar_por_chave_primaria(const char *data_filename, CHAVEPRIMARIA *vetor_busca_primaria, size_t tamanho_vetor_busca_primaria) {
-    int posicao = obter_auxiliar(1);
+    // Obtém a posição da próxima busca
+    int posicao = obter_auxiliar(4);
     if (posicao >= tamanho_vetor_busca_primaria) {
         printf("Todas as buscas por chave primaria ja foram realizadas!\n");
         return;
     }
-    
+
+    // Obter a chave primária atual
+    CHAVEPRIMARIA chave_primaria = vetor_busca_primaria[posicao];
+    printf("Buscando chave: %s-%s\n", chave_primaria.id_Aluno, chave_primaria.sigla_Disciplina);
+
+    // Atualiza a posição para a próxima busca
     posicao++;
-    printf("Buscando chave: %d\n", posicao);
-    atualizar_auxiliar(1, posicao);
+    atualizar_auxiliar(4, posicao);
 
-    char bufferkey[18];
+    // Prepara a chave para busca no índice primário
     IndexEntry key;
-    printf("%s\n", key[posicao].id);
-    //snprintf(buffer, sizeof(buffer), "%s", key);
-    //snprintf(key.sigla, FIXO_SIGLA + 1, "%s", key); // Assume que a chave é concatenada: ID+Sigla
-    snprintf(bufferkey, sizeof(bufferkey), "%s %s ", key.id, key.sigla);
-    printf("%s\n", key);
+    snprintf(key.id, FIXO_ID + 1, "%s", chave_primaria.id_Aluno);
+    snprintf(key.sigla, FIXO_SIGLA + 1, "%s", chave_primaria.sigla_Disciplina);
 
+    // Realiza a busca binária no índice primário
     IndexEntry *result = bsearch(&key, primary_index, primary_index_size, sizeof(IndexEntry), compare_primary_index);
 
     if (result) {
+        // Abre o arquivo de dados para leitura do registro
         FILE *data_file = fopen(data_filename, "rb");
         if (!data_file) {
             perror("Erro ao abrir o arquivo de dados");
             return;
         }
 
-        fseek(data_file, result->offset, SEEK_SET);
+        // Move o ponteiro do arquivo para o offset encontrado
+        if (fseek(data_file, result->offset, SEEK_SET) != 0) {
+            perror("Erro ao posicionar o ponteiro do arquivo");
+            fclose(data_file);
+            return;
+        }
+
+        // Lê o tamanho do registro e o registro em si
         int record_size;
-        fread(&record_size, sizeof(int), 1, data_file);
+        if (fread(&record_size, sizeof(int), 1, data_file) != 1) {
+            perror("Erro ao ler o tamanho do registro");
+            fclose(data_file);
+            return;
+        }
 
         char buffer[record_size + 1];
-        fread(buffer, sizeof(char), record_size, data_file);
+        if (fread(buffer, sizeof(char), record_size, data_file) != record_size) {
+            perror("Erro ao ler o registro");
+            fclose(data_file);
+            return;
+        }
         buffer[record_size] = '\0';
 
+        // Exibe o registro encontrado
         printf("Registro encontrado: %s\n", buffer);
         fclose(data_file);
-     } else {
+    } else {
         printf("Registro não encontrado\n");
-     }
+    }
 }
+
+
 
 // FUNÇÕES AUXILIARES //
 
@@ -194,14 +216,14 @@ size_t contar_registros(const char *nome_arquivo) {
 
 int obter_auxiliar(int posicao) {
     // Obtem o valor de quantos registros já foram gravados
-    // Possiveis valores de entrada: 0 (insere.bin), 1 (busca_p.bin), 2 (busca_s.bin)
+    // Possiveis valores de entrada: 0 (insere.bin), 4 (busca_p.bin), 8 (busca_s.bin)
     FILE *arquivo_auxiliar = abrir_criar_arquivo("auxiliar.bin", "rb");
     if (arquivo_auxiliar == NULL) {
         perror("Erro ao abrir arquivo. SAINDO!!!\n");
         exit(EXIT_FAILURE);
     }
 
-    int valor = 1;
+    int valor = 0;
 
     fseek(arquivo_auxiliar, posicao, SEEK_SET);
     fread(&valor, sizeof(int), 1, arquivo_auxiliar);

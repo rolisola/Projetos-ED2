@@ -26,7 +26,7 @@ int main() {
         printf("1. Inserção\n");
         printf("2. Busca Primária\n");
         printf("3. Busca Secundária\n");
-        printf("4. Sair e salvar\n");
+        //printf("4. Sair e salvar\n");
         printf("0. Sair\n");
         printf("Opção: ");
         scanf("%d", &opcao);
