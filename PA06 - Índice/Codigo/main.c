@@ -30,7 +30,7 @@ typedef struct {
 
 INDICEPRIMARIO *vetor_indice_primario = NULL;
 // SecondaryINDICEPRIMARIO *secondary_index = NULL;
-// qSecondaryListEntry *secondary_list = NULL;
+// SecondaryListEntry *secondary_list = NULL;
 int tamanho_vetor_indice_primario = 0;
 // int secondary_index_size = 0;
 // int secondary_list_size = 0;
@@ -62,7 +62,7 @@ int main() {
     const char *nome_arquivo_insere = "insere.bin";
     const char *nome_arquivo_busca_primaria = "busca_p.bin";
     const char *nome_arquivo_indice_primario = "indice_primario.bin";
-    //const char *nome_arquivo_busca_secundaria = "busca_s.bin";
+    // const char *nome_arquivo_busca_secundaria = "busca_s.bin";
     const char *nome_arquivo_indice_secundario = "indice_secundario.bin";
 
     REGISTRO *vetor_insere;
@@ -76,9 +76,8 @@ int main() {
     if (vetor_indice_primario == NULL) {
         // Inicializa o índice primário
         verificar_e_recriar_indice(nome_arquivo_dados, nome_arquivo_indice_primario);
-        //carregar_indice_primario(nome_arquivo_dados, nome_arquivo_indice_primario);
     }
-    // system("cls");
+    system("cls");
 
     do {
         printf("Menu:\n");
@@ -194,8 +193,7 @@ void inserir_registro(const char *nome_arquivo_dados, const char *nome_arquivo_i
     atualizar_auxiliar(0, posicao);
 
     qsort(vetor_indice_primario, tamanho_vetor_indice_primario, sizeof(INDICEPRIMARIO), comparar_indice_primario);
-    // salvar_indice_primario(nome_arquivo_indice_primario);
-    //salvar_indice_secundario(nome_arquivo_indice_secundario);
+    // salvar_indice_secundario(nome_arquivo_indice_secundario);
 }
 
 void buscar_por_chave_primaria(const char *nome_arquivo_dados, CHAVEPRIMARIA *vetor_busca_primaria, size_t tamanho_vetor_busca_primaria) {
@@ -228,8 +226,6 @@ void buscar_por_chave_primaria(const char *nome_arquivo_dados, CHAVEPRIMARIA *ve
     posicao++;
     atualizar_auxiliar(4, posicao);
 }
-
-// FUNÇÕES AUXILIARES //
 
 REGISTRO *carregar_insere(const char *nome_arquivo_insere) {
     // Carrega e retorna um vetor de registros do insere.bin
