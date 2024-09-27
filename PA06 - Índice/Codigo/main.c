@@ -52,6 +52,9 @@ void keysort();
 long busca_binaria(CHAVEPRIMARIA chave_primaria);
 void recriar_indice_primario(const char *nome_arquivo_dados, const char *nome_arquivo_indice_primario);
 void imprimir_registro_offset(const char *nome_arquivo_dados, long offset);
+void imprime_vetor_indice_primario();
+void inicializar_vetor_indice();
+void verificar_e_recriar_indice(const char *nome_arquivo_dados, const char *nome_arquivo_indice);
 
 int main() {
     int opcao;
@@ -72,9 +75,11 @@ int main() {
 
     if (vetor_indice_primario == NULL) {
         // Inicializa o índice primário
-        carregar_indice_primario(nome_arquivo_dados, nome_arquivo_indice_primario);
+        verificar_e_recriar_indice(nome_arquivo_dados, nome_arquivo_indice_primario);
+        //carregar_indice_primario(nome_arquivo_dados, nome_arquivo_indice_primario);
     }
     // system("cls");
+
     do {
         printf("Menu:\n");
         printf("1. Inserção\n");
@@ -101,6 +106,9 @@ int main() {
         case 4:
             printf("Salvando e saindo.\n");
             salvar_indice_primario(nome_arquivo_indice_primario);
+            break;
+        case 5:
+            imprime_vetor_indice_primario();
             break;
         case 0:
             printf("Programa finalizado!\n");
@@ -206,9 +214,11 @@ void buscar_por_chave_primaria(const char *nome_arquivo_dados, CHAVEPRIMARIA *ve
     printf("Buscando chave: %s-%s\n", chave_primaria.id_Aluno, chave_primaria.sigla_Disciplina);
 
     long offset = busca_binaria(chave_primaria);
+    //printf("%ld\n", offset);
     if (offset != -1) {
         imprimir_registro_offset(nome_arquivo_dados, offset);
     } else {
+        //imprimir_registro_offset(nome_arquivo_dados, offset);
         printf("Registro não encontrado.\n");
         return;
     }
@@ -336,7 +346,7 @@ void carregar_indice_primario(const char *nome_arquivo_dados, const char *nome_a
     while (fread(&vetor_indice_primario[tamanho_vetor_indice_primario], sizeof(INDICEPRIMARIO), 1, arquivo_indice_primario)) {
         tamanho_vetor_indice_primario++;
     }
-    if(tamanho_vetor_indice_primario != obter_auxiliar(0)){
+    if (tamanho_vetor_indice_primario != obter_auxiliar(0)) {
         recriar_indice_primario(nome_arquivo_dados, nome_arquivo_indice);
     }
     fechar_arquivo(arquivo_indice_primario);
@@ -365,24 +375,25 @@ void recriar_indice_primario(const char *nome_arquivo_dados, const char *nome_ar
     }
 
     tamanho_vetor_indice_primario = obter_auxiliar(0);
-    vetor_indice_primario = malloc(sizeof(INDICEPRIMARIO) * tamanho_vetor_indice_primario);
+    //vetor_indice_primario = realloc(sizeof(INDICEPRIMARIO) * tamanho_vetor_indice_primario);
     if (vetor_indice_primario == NULL) {
         perror("Erro ao alocar memória para vetor_indice_primario");
+        fechar_arquivo(arquivo_dados);
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < tamanho_vetor_indice_primario;i++) {
+    for (int i = 0; i < tamanho_vetor_indice_primario; i++) {
         int tamanho_string;
         char string_formatada[256];
         vetor_indice_primario[i].offset = ftell(arquivo_dados);
         fread(&tamanho_string, sizeof(long), 1, arquivo_dados);
         fread(string_formatada, sizeof(char), tamanho_string, arquivo_dados);
-        //printf("tamanho string: %d\n", tamanho_string);
-        //printf("string: %s\n", string_formatada);
+        // printf("tamanho string: %d\n", tamanho_string);
+        // printf("string: %s\n", string_formatada);
         sscanf(string_formatada, "%3s#%3s", vetor_indice_primario[i].id_Aluno, vetor_indice_primario[i].sigla_Disciplina);
-        //printf("idaluno: %s\n", vetor_indice_primario[i].id_Aluno);
-        //printf("sigla: %s\n",vetor_indice_primario[i].sigla_Disciplina);
-        //printf("offset: %ld\n",vetor_indice_primario[i].offset);
+        // printf("idaluno: %s\n", vetor_indice_primario[i].id_Aluno);
+        // printf("sigla: %s\n",vetor_indice_primario[i].sigla_Disciplina);
+        // printf("offset: %ld\n",vetor_indice_primario[i].offset);
     }
     /*
     while (fread(&offset, sizeof(long), 1, arquivo_dados)) {
@@ -401,7 +412,7 @@ void recriar_indice_primario(const char *nome_arquivo_dados, const char *nome_ar
     fechar_arquivo(arquivo_dados);
 
     keysort();
-    //salvar_indice_primario(nome_arquivo_indice_primario);
+    // salvar_indice_primario(nome_arquivo_indice_primario);
 }
 
 /*void save_secondary_index(const char *index_filename) {
@@ -447,6 +458,15 @@ void imprime_vetor_chave_primaria(CHAVEPRIMARIA *vetor_chave_primaria, int taman
         printf("%d\n", i);
         printf("Id Aluno:         (%s)\n", vetor_chave_primaria[i].id_Aluno);
         printf("Sigla Disciplina: (%s)\n\n", vetor_chave_primaria[i].sigla_Disciplina);
+    }
+}
+
+void imprime_vetor_indice_primario() {
+    for (int i = 0; i < tamanho_vetor_indice_primario; i++) {
+        printf("%d\n", i);
+        printf("Id Aluno:         (%s)\n", vetor_indice_primario[i].id_Aluno);
+        printf("Sigla Disciplina: (%s)\n", vetor_indice_primario[i].sigla_Disciplina);
+        printf("Offset: (%ld)\n\n", vetor_indice_primario[i].offset);
     }
 }
 
@@ -500,14 +520,34 @@ void imprimir_registro_offset(const char *nome_arquivo_dados, long offset) {
         perror("Erro ao abrir arquivo de dados");
         return;
     }
-    printf("offset %ld\n", offset);
-    fseek(arquivo_dados, offset - 4, SEEK_SET);
+    // printf("offset %ld\n", offset);
+    fseek(arquivo_dados, offset, SEEK_SET);
     int tamanho_string;
     fread(&tamanho_string, sizeof(int), 1, arquivo_dados);
-    printf("tamanho string: %d\n", tamanho_string);
-    char string_formatada[128];
+    // printf("tamanho string: %d\n", tamanho_string);
+    char string_formatada[256];
     fread(string_formatada, sizeof(char), tamanho_string, arquivo_dados);
-    string_formatada[tamanho_string] = '\0';
+    //string_formatada[tamanho_string] = '\0';
     printf("Registro encontrado: %s\n", string_formatada);
     fclose(arquivo_dados);
+}
+
+void verificar_e_recriar_indice(const char *nome_arquivo_dados, const char *nome_arquivo_indice) {
+    FILE *arquivo_indice = fopen(nome_arquivo_indice, "r");
+    if (arquivo_indice == NULL) {
+        // Arquivo de índice não existe, recriar índice
+        printf("Arquivo de índice não encontrado. Recriando índice...\n");
+        inicializar_vetor_indice();
+        recriar_indice_primario(nome_arquivo_dados, nome_arquivo_indice);
+    } else {
+        // Arquivo de índice existe, carregar índices
+        fclose(arquivo_indice);
+        // Carregar índices do arquivo (implementar conforme necessário)
+    }
+}
+
+void inicializar_vetor_indice() {
+    // Inicializa o vetor de índices
+    vetor_indice_primario = malloc(sizeof(INDICEPRIMARIO) * 100); // Exemplo de alocação
+    tamanho_vetor_indice_primario = 0;
 }
