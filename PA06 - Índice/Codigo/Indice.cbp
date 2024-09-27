@@ -31,10 +31,6 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="registro.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="registro.h" />
 		<Unit filename="arquivo.c">
 			<Option compilerVar="CC" />
 		</Unit>
