@@ -7,3 +7,5 @@ O tema é um sistema de gerenciamento de histórico escolar.
 Projetos:
  1. Organização de Arquivos
  2. Índice
+ 3. Árvore B
+ 4. Hashing
