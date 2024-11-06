@@ -1,5 +1,4 @@
 #include<stdio.h>
-#include<conio.h>
 #include<string.h>
 
 int main() {
@@ -25,7 +24,7 @@ int main() {
                 {"002", "111", "Nome-10", "Disc-10", 10, 10},
 				{"002", "111", "Nome-10", "Disc-10", 10, 10}};//duplicada
        
-    fd = fopen("insere.bin", "w+b");
+    fd = fopen("insere1.bin", "w+b");
     fwrite(vet, sizeof(vet), 1, fd);
     fclose(fd);
     
@@ -37,9 +36,9 @@ int main() {
                   {"001", "888"},
                   {"001", "444"},
 				  {"001", "333"},
-				  {"001", "000"}};//não encontrada
+				  {"001", "000"}};//nï¿½o encontrada
     
-    fd = fopen("busca.bin", "w+b");
+    fd = fopen("busca1.bin", "w+b");
     fwrite(vet_b, sizeof(vet_b), 1, fd);
     fclose(fd);    
 }
