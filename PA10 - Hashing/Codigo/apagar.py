@@ -1,8 +1,8 @@
 import os
 
 # Especifique o caminho do arquivo
-caminho_arquivo1 = 'auxiliar.bin'
-caminho_arquivo2 = 'dados.bin'
+caminho_arquivo1 = 'arq_registros.bin'
+caminho_arquivo2 = 'Hash_Table.bin'
 caminho_arquivo3 = 'arvore.bin'
 
 # Verifica se o arquivo existe

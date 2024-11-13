@@ -1,5 +1,4 @@
 #include<stdio.h>
-#include<conio.h>
 #include<string.h>
 
 int main() {
@@ -13,9 +12,12 @@ int main() {
         char nome_disc[50];
         float media;
         float freq;
-    } vet[3] = { {"001", "001", "Nome-1", "Disc-001", 8.9, 80.3},
-                 {"002", "001", "Nome-2", "Disc-001", 3.3, 72.3},
-                 {"001", "002", "Nome-1", "Disc-002", 9.7, 73.7}};
+    } vet[6] = { {"111", "001", "Nome-111", "Disc-001", 8.9, 80.3},
+                 {"222", "001", "Nome-222", "Disc-001", 3.3, 72.3},
+                 {"333", "003", "Nome-333", "Disc-003", 3.3, 72.3},
+                 {"111", "001", "Nome-111", "Disc-001", 3.3, 72.3},
+                 {"222", "003", "Nome-222", "Disc-001", 3.3, 72.3},
+                 {"333", "002", "Nome-333", "Disc-002", 9.7, 73.7}};
        
     fd = fopen("insere.bin", "w+b");
     fwrite(vet, sizeof(vet), 1, fd);

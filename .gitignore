@@ -56,14 +56,16 @@ obj/*
 *.bin
 *.layout
 *.code-workspace
-/PA04 - Organização de Arquivos/Codigo/bin
-/PA06 - Índice/Codigo/bin
-/PA08 - Árvore Binária/Codigo/bin
-PA08 - Árvore B/Template/saida
-PA08 - Árvore B/Template/temp
+PA04 - Organização de Arquivos/Codigo/bin
+PA06 - Índice/Codigo/bin
+PA08 - Árvore B/Template/saida/
+PA08 - Árvore B/Template/temp/
 *.bin
 *.bin
 PA08 - Árvore B/Template/insere.bin
 PA08 - Árvore B/Template/busca.bin
 
 .vscode/
+PA10 - Árvore B+/Codigo/bin/
+PA10 - Árvore B+/Codigo/obj/
+PA10 - Hashing/Codigo/bin/Debug/Hashing
