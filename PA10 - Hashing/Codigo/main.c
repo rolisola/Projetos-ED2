@@ -64,7 +64,7 @@ void create_hash(FILE **fp_hash) {
 }
 
 int hash(int key) {
-    return key % N;
+    return (key % N) + 1;
 }
 
 size_t obter_tamanho_arquivo(FILE *arquivo) {
@@ -212,30 +212,30 @@ void remover(FILE **fp_remove, FILE *fp_hash, FILE *fp_arq) {
 }
 
 int inserir_hash(int key, int BOF_arq_registros, FILE *fp_hash, int *tentativas) {
-    HASH_PAGE page;
+    HASH_PAGE read_page, write_page;
     int addr, i, contador_tentativas = 0;
 
-    page.key = key;
-    page.BOF_arq_registros = BOF_arq_registros;
+    write_page.key = key;
+    write_page.BOF_arq_registros = BOF_arq_registros;
 
     addr = hash(key);
 
     for (i = addr - 1; contador_tentativas < N; i++) {
-        if (i >= 13) {
-            i -= 13;
+        if (i >= N) {
+            i -= N;
         }
         if (i == -1) {
             i++;
         }
         fseek(fp_hash, i * PAGESIZE, SEEK_SET);
-        fread(&key, sizeof(int), 1, fp_hash);
+        fread(&read_page, sizeof(read_page), 1, fp_hash);
 
-        if (key == VAZIO_VERDADEIRO || key == VAZIO_FALSO) {
-            fseek(fp_hash, (-1) * sizeof(int), SEEK_CUR);
-            fwrite(&page, sizeof(page), 1, fp_hash);
+        if (read_page.key == VAZIO_VERDADEIRO || read_page.key == VAZIO_FALSO) {
+            fseek(fp_hash, i * PAGESIZE, SEEK_SET);
+            fwrite(&write_page, sizeof(write_page), 1, fp_hash);
 
             *tentativas = contador_tentativas;
-            return addr;
+            return i; // Return the address (1-based index)
         }
 
         contador_tentativas++;
@@ -246,8 +246,6 @@ int inserir_hash(int key, int BOF_arq_registros, FILE *fp_hash, int *tentativas)
 
 // Insere o registro no arquivo principal e chama a função para incluí-lo na árvore B:
 void inserir(FILE **fp_insere, FILE *fp_hash, FILE *fp_arq) {
-
-    // Abrindo o arquivo insere.bin para leitura:
     if ((*fp_insere = fopen("insere.bin", "rb")) == NULL) {
         printf("Não foi possível abrir o arquivo");
         return;
@@ -289,28 +287,21 @@ void inserir(FILE **fp_insere, FILE *fp_hash, FILE *fp_arq) {
         fwrite(&tam_reg, sizeof(int), 1, fp_arq);
         fwrite(buffer, tam_reg, 1, fp_arq);
 
-        // Inserindo o registro na tabela hash:
         key_address = inserir_hash(page.key, current_BOF, fp_hash, &tentativas);
 
         if (key_address != -1) {
             printf("\n'%s'+'%s'\n", registro.id_aluno, registro.sigla_disc);
-            if (key_address == 0) {
-                key_address++;
-            }
             printf("Endereço %d\n", key_address);
 
             if (tentativas > 0) {
                 printf("Colisão\nTentativa %d\n", tentativas);
             }
             printf("Chave inserida com sucesso\n");
-        }
-
-        else {
+        } else {
             printf("\nTabela hash cheia\n");
         }
     }
 
-    // Atualizando o contador de registros lidos do header do arquivo principal:
     header.regLidos_insere++;
     rewind(fp_arq);
     fwrite(&header, sizeof(header), 1, fp_arq);

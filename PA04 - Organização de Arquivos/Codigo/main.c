@@ -1,13 +1,12 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<unistd.h>
-#include<stdbool.h>
-#include<assert.h>
-#include<locale.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include <assert.h>
 
 struct Reg {
-	char idAluno [4];
+    char idAluno[4];
     char siglaDisc[4];
     char nomeAluno[50];
     char nomeDisc[50];
@@ -16,37 +15,29 @@ struct Reg {
 };
 
 struct Chave {
-	char idAluno [4];
+    char idAluno[4];
     char siglaDisc[4];
 };
 
 struct Cabecalho {
     int regLidos_insere;
     int regLidos_remove;
-    int BOF_dispo; //BOF=ByteOffSet
+    int BOF_dispo; // BOF=ByteOffSet
 };
 
 bool existeArq() {
-	if(access("arq_registros.bin", F_OK) == 0)
-		return true;
-		
-	return false;
+    if (access("arq_registros.bin", F_OK) == 0)
+        return true;
+
+    return false;
 }
 
-int menu_inicial() {
-	int op;
-	
-	do {
-		printf("\n----------------Menu------------------\n");
-		printf("Inserir [1]\n");
-		printf("Remover [2]\n");
-		printf("Compactar [3]\n");
-		printf("Sair [4]\n");
-		printf("Opcao: ");
-		scanf(" %d",&op);
-	} while(op != 1 && op != 2 && op != 3 && op != 4);
-	
-	return op;
+size_t obter_tamanho_arquivo(FILE *arquivo) {
+    fseek(arquivo, 0, SEEK_END);     // Move o ponteiro para o final do arquivo
+    size_t tamanho = ftell(arquivo); // Pega a posição atual do ponteiro (tamanho do arquivo)
+    fseek(arquivo, 0, SEEK_SET);     // Volta o ponteiro para o início do arquivo
+
+    return tamanho;
 }
 
 int pega_registro(FILE *fp, char *buffer) {
@@ -54,9 +45,10 @@ int pega_registro(FILE *fp, char *buffer) {
     int tam_registro = 0;
     int i = 0;
 
-    while(pipeline_counter < 5) {
+    while (pipeline_counter < 5) {
         buffer[i] = fgetc(fp);
-        if(buffer[i] == '|') pipeline_counter++;
+        if (buffer[i] == '#')
+            pipeline_counter++;
         tam_registro++;
         i++;
     }
@@ -66,44 +58,52 @@ int pega_registro(FILE *fp, char *buffer) {
 }
 
 void inserir(FILE **fp_insere, FILE *fp_arq) {
-    if ((*fp_insere = fopen("insere.bin","r+b")) == NULL) {
+    if ((*fp_insere = fopen("insere.bin", "r+b")) == NULL) {
         printf("Nao foi possivel abrir o arquivo (void inserir)");
         return;
-	}
-	
-	struct Reg registro;
+    }
+
+    struct Reg registro;
     struct Cabecalho header;
+
+    size_t tamanho_arquivo = obter_tamanho_arquivo(*fp_insere);
+    size_t quantidade_registros = tamanho_arquivo / sizeof(registro);
 
     rewind(fp_arq);
     fread(&header, sizeof(header), 1, fp_arq);
 
-    fseek(*fp_insere, header.regLidos_insere*sizeof(registro), SEEK_SET);
+    if (header.regLidos_insere >= quantidade_registros) {
+        printf("Todos os registros foram inseridos.\n");
+        return;
+    }
+
+    fseek(*fp_insere, header.regLidos_insere * sizeof(registro), SEEK_SET);
     fread(&registro, sizeof(registro), 1, *fp_insere);
-    
+
     char buffer[512];
-    sprintf(buffer, "%s%s|%s|%s|%0.1f|%0.1f|", registro.idAluno, registro.siglaDisc, registro.nomeAluno, registro.nomeDisc, registro.media, registro.freq);
+    sprintf(buffer, "%s%s#%s#%s#%0.1f#%0.1f#", registro.idAluno, registro.siglaDisc, registro.nomeAluno, registro.nomeDisc, registro.media, registro.freq);
 
     int tam_reg = strlen(buffer);
     int tam_espaco;
 
-    int BOF_ant_dispo = 8;  //Byte offset do terceiro campo do header
+    int BOF_ant_dispo = 8; // Byte offset do terceiro campo do header
     int BOF_atual_dispo;
     int BOF_prox_dispo;
-    
-    if(header.BOF_dispo != -1) {
+
+    if (header.BOF_dispo != -1) {
         fseek(fp_arq, header.BOF_dispo, SEEK_SET);
         BOF_atual_dispo = header.BOF_dispo;
 
-        while(true) {
+        while (true) {
             fread(&tam_espaco, sizeof(int), 1, fp_arq);
             fgetc(fp_arq);
             fread(&BOF_prox_dispo, sizeof(int), 1, fp_arq);
 
-            if(tam_reg <= tam_espaco) {
-                fseek(fp_arq, (-1)*sizeof(int) - 1, SEEK_CUR);
+            if (tam_reg <= tam_espaco) {
+                fseek(fp_arq, (-1) * sizeof(int) - 1, SEEK_CUR);
                 fwrite(buffer, 1, tam_reg, fp_arq);
 
-                if(BOF_ant_dispo == 8) {
+                if (BOF_ant_dispo == 8) {
                     header.BOF_dispo = BOF_prox_dispo;
                     rewind(fp_arq);
                     fwrite(&header, sizeof(header), 1, fp_arq);
@@ -118,7 +118,7 @@ void inserir(FILE **fp_insere, FILE *fp_arq) {
             }
 
             else {
-                if(BOF_prox_dispo == -1) {
+                if (BOF_prox_dispo == -1) {
                     fseek(fp_arq, 0, SEEK_END);
                     fwrite(&tam_reg, sizeof(int), 1, fp_arq);
                     fwrite(buffer, tam_reg, 1, fp_arq);
@@ -126,7 +126,7 @@ void inserir(FILE **fp_insere, FILE *fp_arq) {
                 }
 
                 else {
-                    if(BOF_ant_dispo == 0) {
+                    if (BOF_ant_dispo == 0) {
                         header.BOF_dispo = BOF_atual_dispo;
                         rewind(fp_arq);
                         fwrite(&header, sizeof(header), 1, fp_arq);
@@ -165,10 +165,10 @@ void inserir(FILE **fp_insere, FILE *fp_arq) {
 }
 
 void remover(FILE **fp_remove, FILE *fp_arq) {
-    if ((*fp_remove = fopen("remove.bin","r+b")) == NULL) {
+    if ((*fp_remove = fopen("remove.bin", "r+b")) == NULL) {
         printf("Não foi possivel abrir o arquivo (void remover)");
         return;
-	}
+    }
 
     struct Chave key;
     struct Cabecalho header;
@@ -179,23 +179,31 @@ void remover(FILE **fp_remove, FILE *fp_arq) {
     char buffer_key[256];
     char buffer_registro[512];
 
+    size_t tamanho_arquivo = obter_tamanho_arquivo(*fp_remove);
+    size_t quantidade_registros = tamanho_arquivo / sizeof(key);
+
     rewind(fp_arq);
     fread(&header, sizeof(header), 1, fp_arq);
 
-    fseek(*fp_remove, header.regLidos_remove*sizeof(key), SEEK_SET);
+    if (header.regLidos_remove >= quantidade_registros) {
+        printf("Todas as remoções foram realizadas.\n");
+        return;
+    }
+
+    fseek(*fp_remove, header.regLidos_remove * sizeof(key), SEEK_SET);
     fread(&key, sizeof(key), 1, *fp_remove);
     sprintf(buffer_key, "%s%s", key.idAluno, key.siglaDisc);
 
-    while(true) {
+    while (true) {
         fread(&tam_reg, sizeof(int), 1, fp_arq);
         fread(&buffer_registro, tam_reg, 1, fp_arq);
 
-        if(buffer_registro[0] != buffer_key[0] || buffer_registro[3] != buffer_key[3]) {
+        if (buffer_registro[0] != buffer_key[0] || buffer_registro[3] != buffer_key[3]) {
             acum_BOF += tam_reg;
             reg_checados++;
 
             fgetc(fp_arq);
-            if(feof(fp_arq)) {
+            if (feof(fp_arq)) {
                 header.regLidos_remove++;
                 rewind(fp_arq);
                 fwrite(&header, sizeof(header), 1, fp_arq);
@@ -207,19 +215,21 @@ void remover(FILE **fp_remove, FILE *fp_arq) {
                 return;
             }
 
-            else fseek(fp_arq, -1, SEEK_CUR);
+            else
+                fseek(fp_arq, -1, SEEK_CUR);
         }
 
-        else break;
+        else
+            break;
     }
 
-    fseek(fp_arq, (-1)*tam_reg, SEEK_CUR);
+    fseek(fp_arq, (-1) * tam_reg, SEEK_CUR);
     char estrela = '*';
     fwrite(&estrela, 1, 1, fp_arq);
     fwrite(&header.BOF_dispo, sizeof(int), 1, fp_arq);
 
-    acum_BOF += reg_checados*sizeof(int);
-    
+    acum_BOF += reg_checados * sizeof(int);
+
     header.BOF_dispo = acum_BOF;
     header.regLidos_remove++;
 
@@ -240,7 +250,7 @@ void compactar(FILE *fp_arq) {
 
     FILE *fp_aux;
 
-    if((fp_aux = fopen("arq_auxiliar.bin", "w+b")) == NULL) {
+    if ((fp_aux = fopen("arq_auxiliar.bin", "w+b")) == NULL) {
         printf("Não foi possivel abrir o arquivo (void compactar)");
         return;
     }
@@ -250,16 +260,16 @@ void compactar(FILE *fp_arq) {
     header.BOF_dispo = -1;
     fwrite(&header, sizeof(header), 1, fp_aux);
 
-    while(true) {
+    while (true) {
         fread(&tam_espaco, sizeof(int), 1, fp_arq);
         ch_aux = fgetc(fp_arq);
 
-        if(ch_aux == '*') {
+        if (ch_aux == '*') {
             fseek(fp_arq, (tam_espaco - 1), SEEK_CUR);
             continue;
         }
 
-        if(ch_aux == EOF) {
+        if (ch_aux == EOF) {
             break;
         }
 
@@ -272,8 +282,10 @@ void compactar(FILE *fp_arq) {
         fseek(fp_arq, tam_espaco - tam_registro, SEEK_CUR);
         ch_aux = fgetc(fp_arq);
 
-        if(ch_aux != EOF) fseek(fp_arq, -1, SEEK_CUR);
-        else break;
+        if (ch_aux != EOF)
+            fseek(fp_arq, -1, SEEK_CUR);
+        else
+            break;
     }
 
     fclose(fp_arq);
@@ -282,20 +294,21 @@ void compactar(FILE *fp_arq) {
     char arquivo_original[100] = "arq_registros.bin";
     char arquivo_auxiliar[100] = "arq_auxiliar.bin";
 
-    if(remove(arquivo_original) == -1 ) printf("Erro ao excluir arquivo\n");
-    if(rename(arquivo_auxiliar, arquivo_original) != 0) printf("Erro ao renomear arquivo\n");
+    if (remove(arquivo_original) == -1)
+        printf("Erro ao excluir arquivo\n");
+    if (rename(arquivo_auxiliar, arquivo_original) != 0)
+        printf("Erro ao renomear arquivo\n");
     remove(arquivo_auxiliar);
 
     printf("\nArquivo compactado com sucesso!\n");
 
-    if((fp_arq = fopen("arq_registros.bin","r+b")) == NULL) {
-	    printf("Não foi possivel abrir o arquivo");
-		return;
-	}
+    if ((fp_arq = fopen("arq_registros.bin", "r+b")) == NULL) {
+        printf("Não foi possivel abrir o arquivo");
+        return;
+    }
 }
 
-int main () {
-    setlocale(LC_ALL,"");
+int main() {
     FILE *fp_arq, *fp_insere;
     FILE *fp_remove;
 
@@ -304,104 +317,53 @@ int main () {
     header.regLidos_insere = 0;
     header.regLidos_remove = 0;
     header.BOF_dispo = -1;
-    
-    if(!existeArq()) {
-        if ((fp_arq = fopen("arq_registros.bin","w+b")) == NULL) {
-	    	printf("Não foi possivel abrir o arquivo");
-		    return 0;
-	    }
+
+    if (!existeArq()) {
+        if ((fp_arq = fopen("arq_registros.bin", "w+b")) == NULL) {
+            printf("Não foi possivel abrir o arquivo");
+            return 0;
+        }
 
         fwrite(&header, sizeof(header), 1, fp_arq);
         rewind(fp_arq);
     }
 
     else {
-        if((fp_arq = fopen("arq_registros.bin","r+b")) == NULL) {
-	    	printf("Não foi possivel abrir o arquivo");
-		    return 0;
-	    }
+        if ((fp_arq = fopen("arq_registros.bin", "r+b")) == NULL) {
+            printf("Não foi possivel abrir o arquivo");
+            return 0;
+        }
     }
 
     int op = 0;
 
-    while(op < 4) {
-        op = menu_inicial();
-
-        switch(op) {
-            case 1: inserir(&fp_insere, fp_arq);
-                    break;
-            case 2: remover(&fp_remove, fp_arq);
-                    break;
-            case 3: compactar(fp_arq);
-                    break;
-            default: break;
-        }
-    }
-}
-/*#include <stdio.h>
-#include "registro.h"
-
-
-int main() {
-    int opcao;
-    const char *arquivo_Historico = "historico.bin";
-    const char *arquivo_insere = "insere.bin";
-    const char *arquivo_remove = "remove.bin";
-    const char *arquivo_auxiliar = "aux.bin";
-
-    //FILE *arquivo = carregar_Historico(arquivo_Historico);
-    carregar_insere();
-
-    do{
-        // Exibe o menu
-        printf("Menu:\n");
-        printf("1. Inserção\n");
-        printf("2. Remoção\n");
-        printf("3. Compactação\n");
-        printf("4. Carregar Arquivo\n");
-        printf("0. Sair\n");
+    do {
+        printf("\n----------------Menu------------------\n");
+        printf("1 - Inserir\n");
+        printf("2 - Remover\n");
+        printf("3 - Compactar\n");
+        printf("0 - Sair\n");
         printf("Opção: ");
-        scanf("%d", &opcao);
-
-        switch(opcao){
-            case 1:
-                printf("Inserindo.\n");
-                //escrever(arquivo_insere);
-                break;
-            case 2:
-                printf("");
-                break;
-            case 3:
-                printf("");
-                break;
-            case 4:
-                printf("");
-                break;
-            case 0:
-                printf("Programa finalizado!\n");
-                break;
-            default:
-                printf("Opção inválida, tente novamente.\n\n\n");
-                break;
+        scanf("%d", &op);
+        switch (op) {
+        case 1:
+            printf("Inserindo.\n");
+            inserir(&fp_insere, fp_arq);
+            break;
+        case 2:
+            printf("Removendo.\n");
+            remover(&fp_remove, fp_arq);
+            break;
+        case 3:
+            printf("Conpactando.\n");
+            compactar(fp_arq);
+            break;
+        case 0:
+            printf("Saindo.\n");
+            break;
+        default:
+            printf("Opção inválido.\n");
+            break;
         }
-    }while(opcao != 0);
-
-
-
-
-    Estado estado = carregarEstado();
-
-    // Exemplo de inserção
-    Registro reg1 = {"001", "ED2", "Paulo da Silva", "Estrutura de Dados 2", 7.3, 75.4};
-    inserirRegistro(arquivo, reg1, &estado);
-
-    // Exemplo de remoção
-    removerRegistro(arquivo, "001", "ED2", &estado);
-
-    // Exemplo de compactação
-    compactarArquivo(nome_Arquivo);
-
-    fecharArquivo(arquivo);
-    return 0;
+    } while (op != 0);
 }
-*/
